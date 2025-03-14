@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+    long_description = ""#fh.read()
 
 setup(
     name="djelia",
@@ -11,7 +11,7 @@ setup(
     description="Python SDK for the Djelia API, providing access to linguistic models for African languages",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/djelia/djelia",
+    url="https://github.com/djelia-org/djelia-python-client",
     
     packages=find_packages(),
     classifiers=[
@@ -35,6 +35,6 @@ setup(
     keywords="djelia, nlp, translation, transcription, text-to-speech, african languages, bambara, mali",
     project_urls={
         "Documentation": "https://djelia.cloud/docs",
-        "Bug Tracker": "https://github.com/djelia/djelia/issues",
+        "Bug Tracker": "https://github.com/djelia-org/djelia-python-client/issues",
     },
 )
