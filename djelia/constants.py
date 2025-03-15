@@ -1,13 +1,15 @@
-BASE_URL = "https://djelia.cloud/api/v1"
+BASE_URL = "https://djelia.cloud"
 API_KEY_HEADER = "x-api-key"
 ENV_API_KEY = "DJELIA_API_KEY"
 
 ENDPOINTS = {
-    "translate": "/models/translate",
-    "supported_languages": "/models/translate/supported-languages",
-    "transcribe": "/models/transcribe",
-    "transcribe_stream": "/models/transcribe/stream",
-    "text_to_speech": "/models/tts",
+    "translate": "/api/v1/models/translate",
+    "supported_languages": "/api/v1/models/translate/supported-languages",
+    "transcribe": "/api/v1/models/transcribe",
+    "transcribe_stream": "/api/v1/models/transcribe/stream",
+    "transcribe_v2": "/api/v2/models/transcribe",
+    "transcribe_stream_v2": "/api/v2/models/transcribe/stream",
+    "text_to_speech": "/api/v1/models/tts",
 }
 
 SUPPORTED_LANGUAGES = {
