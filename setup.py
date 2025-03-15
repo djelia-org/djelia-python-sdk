@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = ""#fh.read()
+    long_description = fh.read()
 
 setup(
     name="djelia",
     version="0.1.0",
     author="Djelia",
-    author_email="support@djelia.com",
-    description="Python SDK for the Djelia API, providing access to linguistic models for African languages",
+    author_email="support@djelia.cloud",
+    description="Python client for Djelia API, providing access to linguistic models for Bambara languages",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/djelia-org/djelia-python-client",

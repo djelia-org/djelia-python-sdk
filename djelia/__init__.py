@@ -14,10 +14,20 @@ from .exceptions import (
     AudioFormatError
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
-    'Djelia',
-    'SUPPORTED_LANGUAGES',
-    'VALID_SPEAKER_IDS'
-    ]
+    'Djelia'
+]
+
+# let's explose only the main client, know that this is a quick implementation so we will come back 
+
+    # 'SUPPORTED_LANGUAGES',
+    # 'VALID_SPEAKER_IDS',
+    # 'DjeliaError',
+    # 'AuthenticationError',
+    # 'ValidationError',
+    # 'APIError',
+    # 'LanguageError',
+    # 'SpeakerError',
+    # 'AudioFormatError'
