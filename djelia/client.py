@@ -63,6 +63,7 @@ class Djelia:
         return response.json()
     
     def translate(self, text: str, source: str, target: str) -> Dict[str, str]:
+
         if source not in SUPPORTED_LANGUAGES:
             raise LanguageError(f"Source language '{source}' not supported. Must be one of {SUPPORTED_LANGUAGES.keys()}")
         if target not in SUPPORTED_LANGUAGES:
@@ -82,9 +83,15 @@ class Djelia:
             
         return response.json()
     
-    def transcribe(self, audio_file: Union[str, BinaryIO], translate_to_french: bool = False) -> Union[List[Dict], Dict]:
-        url = f"{BASE_URL}{ENDPOINTS['transcribe']}"
+    def transcribe(self, audio_file: Union[str, BinaryIO], translate_to_french: bool = False, version: int = 1) -> Union[List[Dict], Dict]:
+
+        if version not in [1, 2]:
+            raise ValidationError("Version must be either 1 or 2")
+            
+        endpoint_key = 'transcribe_v2' if version == 2 else 'transcribe'
+        url = f"{BASE_URL}{ENDPOINTS[endpoint_key]}"
         params = {"translate_to_french": translate_to_french}
+        
         try:
             if isinstance(audio_file, str):
                 with open(audio_file, 'rb') as f:
@@ -101,9 +108,12 @@ class Djelia:
             
         return response.json()
     
-    def stream_transcribe(self, audio_file: Union[str, BinaryIO], translate_to_french: bool = False) -> Generator[Dict, None, None]:
-
-        url = f"{BASE_URL}{ENDPOINTS['transcribe_stream']}"
+    def stream_transcribe(self, audio_file: Union[str, BinaryIO], translate_to_french: bool = False, version: int = 1) -> Generator[Dict, None, None]:
+        if version not in [1, 2]:
+            raise ValidationError("Version must be either 1 or 2")
+            
+        endpoint_key = 'transcribe_stream_v2' if version == 2 else 'transcribe_stream'
+        url = f"{BASE_URL}{ENDPOINTS[endpoint_key]}"
         params = {"translate_to_french": translate_to_french}
         
         try:
@@ -151,7 +161,3 @@ class Djelia:
                 raise IOError(f"Failed to save audio file: {str(e)}")
         else:
             return response.content
-        
-
-
-        
