@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="djelia",
-    version="0.1.0",
+    version="0.2.0",  
     author="Djelia",
     author_email="support@djelia.cloud",
     description="Python client for Djelia API, providing access to linguistic models for Bambara languages",
@@ -31,8 +31,9 @@ setup(
     python_requires=">=3.7",
     install_requires=[
         "requests>=2.25.0",
+        "aiohttp>=3.7.0",  
     ],
-    keywords="djelia, nlp, translation, transcription, text-to-speech, african languages, bambara, mali",
+    keywords="djelia, nlp, translation, transcription, text-to-speech, african languages, bambara, mali, async",
     project_urls={
         "Documentation": "https://djelia.cloud/docs",
         "Bug Tracker": "https://github.com/djelia-org/djelia-python-client/issues",
