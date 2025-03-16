@@ -21,12 +21,14 @@ __all__ = [
     'Djelia',
     'AsyncDjelia',
     'SUPPORTED_LANGUAGES',
-    'VALID_SPEAKER_IDS',
-    'DjeliaError',
-    'AuthenticationError',
-    'ValidationError',
-    'APIError',
-    'LanguageError',
-    'SpeakerError',
-    'AudioFormatError'
+    'VALID_SPEAKER_IDS'
 ]
+
+    # let's close those component
+    # 'DjeliaError',
+    # 'AuthenticationError',
+    # 'ValidationError',
+    # 'APIError',
+    # 'LanguageError',
+    # 'SpeakerError',
+    # 'AudioFormatError'
