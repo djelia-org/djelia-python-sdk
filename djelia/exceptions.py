@@ -1,3 +1,4 @@
+# I will come back to this part but for now let's keep it like this
 class DjeliaError(Exception):
     """Base exception for all Djelia client errors"""
     pass
