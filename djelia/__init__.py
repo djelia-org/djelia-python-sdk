@@ -1,8 +1,9 @@
-from .client import Djelia
-from .constants import (
-    SUPPORTED_LANGUAGES,
-    VALID_SPEAKER_IDS
-)
+from .client import Djelia, AsyncDjelia
+from .constants import djelia_config
+
+
+SUPPORTED_LANGUAGES = djelia_config.SUPPORTED_LANGUAGES
+VALID_SPEAKER_IDS = djelia_config.VALID_SPEAKER_IDS
 
 from .exceptions import (
     DjeliaError,
@@ -17,17 +18,15 @@ from .exceptions import (
 __version__ = "0.2.0"
 
 __all__ = [
-    'Djelia'
+    'Djelia',
+    'AsyncDjelia',
+    'SUPPORTED_LANGUAGES',
+    'VALID_SPEAKER_IDS',
+    'DjeliaError',
+    'AuthenticationError',
+    'ValidationError',
+    'APIError',
+    'LanguageError',
+    'SpeakerError',
+    'AudioFormatError'
 ]
-
-# let's explose only the main client, know that this is a quick implementation so we will come back 
-
-    # 'SUPPORTED_LANGUAGES',
-    # 'VALID_SPEAKER_IDS',
-    # 'DjeliaError',
-    # 'AuthenticationError',
-    # 'ValidationError',
-    # 'APIError',
-    # 'LanguageError',
-    # 'SpeakerError',
-    # 'AudioFormatError'
