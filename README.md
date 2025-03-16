@@ -1,6 +1,6 @@
 # Djelia Python Client
 
-A simple Python client for the Djelia API, providing language services for Bambara and other African languages.
+Python client for the Djelia API, providing language services for Bambara .
 
 ## Installation
 
