@@ -550,7 +550,6 @@ class DjeliaCookbook:
     # ------------------------------
     # Main Execution
     # ------------------------------
-
     def run(self) -> None:
         print(f"\n{ConsoleColor.CYAN}{'=' * 60}{ConsoleColor.RESET}")
         print(f"{ConsoleColor.YELLOW}{'DJELIA SDK DEVELOPER COOKBOOK':^60}{ConsoleColor.RESET}")
