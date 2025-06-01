@@ -6,13 +6,26 @@ from typing import List
 from uuid import uuid4
 
 from djelia import Djelia, DjeliaAsync
-from djelia.models import (Language, SupportedLanguageSchema,
-                           TranslationRequest, TranslationResponse, TTSRequest,
-                           TTSRequestV2, Versions)
+from djelia.models import (
+    Language,
+    SupportedLanguageSchema,
+    TranslationRequest,
+    TranslationResponse,
+    TTSRequest,
+    TTSRequestV2,
+    Versions,
+)
 
 from .config import Config
-from .utils import (ConsoleColor, handle_transcription_result, print_error,
-                    print_info, print_success, print_summary, process_result)
+from .utils import (
+    ConsoleColor,
+    handle_transcription_result,
+    print_error,
+    print_info,
+    print_success,
+    print_summary,
+    process_result,
+)
 
 # ================================================
 #                  Djelia Cookbook
