@@ -5,14 +5,9 @@ from typing import BinaryIO
 
 import aiohttp
 
-from djelia.models import (
-    DjeliaRequest,
-    ErrorsMessage,
-    FrenchTranscriptionResponse,
-    Params,
-    TranscriptionSegment,
-    Versions,
-)
+from djelia.models import (DjeliaRequest, ErrorsMessage,
+                           FrenchTranscriptionResponse, Params,
+                           TranscriptionSegment, Versions)
 
 
 class Transcription:

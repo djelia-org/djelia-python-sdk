@@ -1,18 +1,9 @@
 from .models import ErrorsMessage  # TranscriptionRequest,
-from .models import (
-    DjeliaRequest,
-    FrenchTranscriptionResponse,
-    HttpRequestInfo,
-    Language,
-    Params,
-    SupportedLanguageSchema,
-    TranscriptionSegment,
-    TranslationRequest,
-    TranslationResponse,
-    TTSRequest,
-    TTSRequestV2,
-    Versions,
-)
+from .models import (DjeliaRequest, FrenchTranscriptionResponse,
+                     HttpRequestInfo, Language, Params,
+                     SupportedLanguageSchema, TranscriptionSegment,
+                     TranslationRequest, TranslationResponse, TTSRequest,
+                     TTSRequestV2, Versions)
 
 __all__ = [
     "Language",

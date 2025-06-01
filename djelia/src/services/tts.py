@@ -1,13 +1,8 @@
 from collections.abc import AsyncGenerator, Generator
 
 from djelia.config.settings import VALID_SPEAKER_IDS, VALID_TTS_V2_SPEAKERS
-from djelia.models import (
-    DjeliaRequest,
-    ErrorsMessage,
-    TTSRequest,
-    TTSRequestV2,
-    Versions,
-)
+from djelia.models import (DjeliaRequest, ErrorsMessage, TTSRequest,
+                           TTSRequestV2, Versions)
 from djelia.utils.exceptions import SpeakerError
 
 

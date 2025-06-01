@@ -1,11 +1,7 @@
 from typing import Any
 
-from djelia.utils.exceptions import (
-    APIError,
-    AuthenticationError,
-    DjeliaError,
-    ValidationError,
-)
+from djelia.utils.exceptions import (APIError, AuthenticationError,
+                                     DjeliaError, ValidationError)
 
 
 class ExceptionMessage:
