@@ -1,5 +1,5 @@
-from .transcription import Transcription, AsyncTranscription
-from .translation import Translation, AsyncTranslation
+from .transcription import AsyncTranscription, Transcription
+from .translation import AsyncTranslation, Translation
 from .tts import TTS, AsyncTTS
 
 __all__ = [
@@ -8,5 +8,5 @@ __all__ = [
     "Translation",
     "AsyncTranslation",
     "TTS",
-    "AsyncTTS"
+    "AsyncTTS",
 ]

@@ -1,5 +1,12 @@
-from djelia.utils.exceptions import APIError, AuthenticationError, DjeliaError, ValidationError
-from typing import Dict, Any
+from typing import Any, Dict
+
+from djelia.utils.exceptions import (
+    APIError,
+    AuthenticationError,
+    DjeliaError,
+    ValidationError,
+)
+
 
 class ExceptionMessage:
     messages: Dict[int, str] = {
@@ -11,6 +18,7 @@ class ExceptionMessage:
     default: str = "API error {}"
     failed: str = "Request failed: {}"
 
+
 class CodeStatusExceptions:
     exceptions: Dict[int, Any] = {
         401: AuthenticationError,
@@ -20,10 +28,12 @@ class CodeStatusExceptions:
     }
     default = DjeliaError
 
+
 def api_exception(code: int, error: Exception) -> Exception:
     return CodeStatusExceptions.exceptions.get(code, APIError)(
         ExceptionMessage.messages.get(code, ExceptionMessage.default.format(str(error)))
     )
+
 
 def general_exception(error: Exception) -> Exception:
     return CodeStatusExceptions.default(ExceptionMessage.failed.format(str(error)))

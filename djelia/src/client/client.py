@@ -1,12 +1,21 @@
-
 import aiohttp
 import requests
-from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
-                      wait_random_exponential)
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
 from djelia.src.auth import Auth
-from djelia.src.services import (Translation, Transcription, TTS,
-                                AsyncTranslation, AsyncTranscription, AsyncTTS)
+from djelia.src.services import (
+    TTS,
+    AsyncTranscription,
+    AsyncTranslation,
+    AsyncTTS,
+    Transcription,
+    Translation,
+)
 from djelia.utils.errors import api_exception, general_exception
 
 
@@ -24,13 +33,13 @@ class Djelia:
     )
     def _make_request(self, method: str, endpoint: str, **kwargs):
         headers = self.auth.get_headers()
-        
-        if 'params' in kwargs:
-            params = kwargs['params']
+
+        if "params" in kwargs:
+            params = kwargs["params"]
             for key, value in params.items():
                 if isinstance(value, bool):
                     params[key] = str(value).lower()
-        
+
         try:
             response = requests.request(method, endpoint, headers=headers, **kwargs)
             response.raise_for_status()
@@ -39,7 +48,6 @@ class Djelia:
             raise api_exception(code=e.response.status_code, error=e)
         except requests.exceptions.RequestException as e:
             raise general_exception(error=e)
-
 
 
 class DjeliaAsync:
@@ -74,23 +82,25 @@ class DjeliaAsync:
     )
     async def _make_request(self, method: str, endpoint: str, **kwargs):
         headers = self.auth.get_headers()
-        
-        if 'params' in kwargs:
-            params = kwargs['params']
+
+        if "params" in kwargs:
+            params = kwargs["params"]
             for key, value in params.items():
                 if isinstance(value, bool):
                     params[key] = str(value).lower()
-        
-        async with self.session.request(method, endpoint, headers=headers, **kwargs) as response:
+
+        async with self.session.request(
+            method, endpoint, headers=headers, **kwargs
+        ) as response:
             try:
                 response.raise_for_status()
-                content_type = response.headers.get('content-type', '').lower()
-                
-                if 'application/json' in content_type:
+                content_type = response.headers.get("content-type", "").lower()
+
+                if "application/json" in content_type:
                     return await response.json()
                 else:
                     return await response.read()
-                    
+
             except aiohttp.ClientResponseError as e:
                 raise api_exception(code=e.status, error=e)
             except aiohttp.ClientError as e:
@@ -98,14 +108,16 @@ class DjeliaAsync:
 
     async def _make_streaming_request(self, method: str, endpoint: str, **kwargs):
         headers = self.auth.get_headers()
-        
-        if 'params' in kwargs:
-            params = kwargs['params']
+
+        if "params" in kwargs:
+            params = kwargs["params"]
             for key, value in params.items():
                 if isinstance(value, bool):
                     params[key] = str(value).lower()
-        
-        response = await self.session.request(method, endpoint, headers=headers, **kwargs)
+
+        response = await self.session.request(
+            method, endpoint, headers=headers, **kwargs
+        )
         try:
             response.raise_for_status()
             return response
@@ -115,5 +127,3 @@ class DjeliaAsync:
                 raise api_exception(code=e.status, error=e)
             else:
                 raise general_exception(error=e)
-
-

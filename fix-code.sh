@@ -3,12 +3,12 @@ set -e
 
 echo "🔧 Running code style fix..."
 
-ruff check caytu_ai telegram test setup.py --fix
-ruff format caytu_ai telegram test setup.py
-isort caytu_ai telegram test setup.py
-black caytu_ai telegram test setup.py
+ruff check djelia cookbook test setup.py --fix
+ruff check djelia cookbook test setup.py
+isort check djelia cookbook test setup.py
+black .
 
-git add caytu_ai telegram
+git add check djelia cookbook test setup.py
 git commit -m "code style ✅ : auto format (ruff, isort, black)" || echo "✅ Nothing to commit"
 
 echo "✅ Done!"

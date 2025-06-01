@@ -71,7 +71,7 @@ setup(
         "djelia",
         "nlp",
         "translation",
-        "transcription", 
+        "transcription",
         "text-to-speech",
         "tts",
         "african languages",

@@ -1,40 +1,61 @@
-from typing import Union, Optional, Generator, AsyncGenerator
-from djelia.models import (DjeliaRequest, TTSRequest, TTSRequestV2, Versions, ErrorsMessage)
+from typing import AsyncGenerator, Generator, Optional, Union
+
 from djelia.config.settings import VALID_SPEAKER_IDS, VALID_TTS_V2_SPEAKERS
+from djelia.models import (
+    DjeliaRequest,
+    ErrorsMessage,
+    TTSRequest,
+    TTSRequestV2,
+    Versions,
+)
 from djelia.utils.exceptions import SpeakerError
+
 
 class TTS:
     def __init__(self, client):
         self.client = client
 
-    def text_to_speech(self, request: Union[TTSRequest, TTSRequestV2], 
-                      output_file: Optional[str] = None,
-                      stream: Optional[bool] = False,
-                      version: Optional[Versions] = Versions.v1) -> Union[bytes, str, Generator]:
-
+    def text_to_speech(
+        self,
+        request: Union[TTSRequest, TTSRequestV2],
+        output_file: Optional[str] = None,
+        stream: Optional[bool] = False,
+        version: Optional[Versions] = Versions.v1,
+    ) -> Union[bytes, str, Generator]:
         if version == Versions.v1:
             if not isinstance(request, TTSRequest):
                 raise ValueError(ErrorsMessage.tts_v1_request_error)
             if request.speaker not in VALID_SPEAKER_IDS:
-                raise SpeakerError(ErrorsMessage.speaker_id_error.format(VALID_SPEAKER_IDS, request.speaker))
-        else:  
+                raise SpeakerError(
+                    ErrorsMessage.speaker_id_error.format(
+                        VALID_SPEAKER_IDS, request.speaker
+                    )
+                )
+        else:
             if not isinstance(request, TTSRequestV2):
                 raise ValueError(ErrorsMessage.tts_v2_request_error)
-            speaker_found = any(speaker.lower() in request.description.lower() for speaker in VALID_TTS_V2_SPEAKERS)
+            speaker_found = any(
+                speaker.lower() in request.description.lower()
+                for speaker in VALID_TTS_V2_SPEAKERS
+            )
             if not speaker_found:
-                raise SpeakerError(ErrorsMessage.speaker_description_error.format(VALID_TTS_V2_SPEAKERS))
+                raise SpeakerError(
+                    ErrorsMessage.speaker_description_error.format(
+                        VALID_TTS_V2_SPEAKERS
+                    )
+                )
 
         if not stream:
             data = request.dict()
             response = self.client._make_request(
                 method=DjeliaRequest.tts.method,
                 endpoint=DjeliaRequest.tts.endpoint.format(version.value),
-                json=data
+                json=data,
             )
-            
+
             if output_file:
                 try:
-                    with open(output_file, 'wb') as f:
+                    with open(output_file, "wb") as f:
                         f.write(response.content)
                     return output_file
                 except IOError as e:
@@ -42,33 +63,33 @@ class TTS:
             else:
                 return response.content
         else:
-
             if version == Versions.v1:
                 raise ValueError(ErrorsMessage.tts_streaming_conpatibility)
             return self._stream_text_to_speech(request, output_file, version)
 
-    def _stream_text_to_speech(self, request: TTSRequestV2, 
-                              output_file: Optional[str] = None,
-                              version: Optional[Versions] = Versions.v2) -> Generator[bytes, None, None]:
-
-        
+    def _stream_text_to_speech(
+        self,
+        request: TTSRequestV2,
+        output_file: Optional[str] = None,
+        version: Optional[Versions] = Versions.v2,
+    ) -> Generator[bytes, None, None]:
         data = request.dict()
         response = self.client._make_request(
             method=DjeliaRequest.tts_stream.method,
             endpoint=DjeliaRequest.tts_stream.endpoint.format(version.value),
             json=data,
-            stream=True
+            stream=True,
         )
-        
+
         audio_chunks = []
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:
                 audio_chunks.append(chunk)
                 yield chunk
-        
+
         if output_file:
             try:
-                with open(output_file, 'wb') as f:
+                with open(output_file, "wb") as f:
                     for chunk in audio_chunks:
                         f.write(chunk)
             except IOError as e:
@@ -79,34 +100,47 @@ class AsyncTTS:
     def __init__(self, client):
         self.client = client
 
-    async def text_to_speech(self, request: Union[TTSRequest, TTSRequestV2], 
-                            output_file: Optional[str] = None,
-                            stream: Optional[bool] = False,
-                            version: Optional[Versions] = Versions.v1) -> Union[bytes, str, AsyncGenerator]:
-
+    async def text_to_speech(
+        self,
+        request: Union[TTSRequest, TTSRequestV2],
+        output_file: Optional[str] = None,
+        stream: Optional[bool] = False,
+        version: Optional[Versions] = Versions.v1,
+    ) -> Union[bytes, str, AsyncGenerator]:
         if version == Versions.v1:
             if not isinstance(request, TTSRequest):
                 raise ValueError(ErrorsMessage.tts_v1_request_error)
             if request.speaker not in VALID_SPEAKER_IDS:
-                raise SpeakerError(ErrorsMessage.speaker_id_error.format(VALID_SPEAKER_IDS, request.speaker))
-        else:  
+                raise SpeakerError(
+                    ErrorsMessage.speaker_id_error.format(
+                        VALID_SPEAKER_IDS, request.speaker
+                    )
+                )
+        else:
             if not isinstance(request, TTSRequestV2):
                 raise ValueError(ErrorsMessage.tts_v2_request_error)
-            speaker_found = any(speaker.lower() in request.description.lower() for speaker in VALID_TTS_V2_SPEAKERS)
+            speaker_found = any(
+                speaker.lower() in request.description.lower()
+                for speaker in VALID_TTS_V2_SPEAKERS
+            )
             if not speaker_found:
-                raise SpeakerError(ErrorsMessage.speaker_description_error.format(VALID_TTS_V2_SPEAKERS))
+                raise SpeakerError(
+                    ErrorsMessage.speaker_description_error.format(
+                        VALID_TTS_V2_SPEAKERS
+                    )
+                )
 
         if not stream:
             request_data = request.dict()
             content = await self.client._make_request(
                 method=DjeliaRequest.tts.method,
                 endpoint=DjeliaRequest.tts.endpoint.format(version.value),
-                json=request_data
+                json=request_data,
             )
-            
+
             if output_file:
                 try:
-                    with open(output_file, 'wb') as f:
+                    with open(output_file, "wb") as f:
                         f.write(content)
                     return output_file
                 except IOError as e:
@@ -119,16 +153,19 @@ class AsyncTTS:
             # FIXED: Remove 'await' here - async generators should not be awaited when returned
             return self._stream_text_to_speech(request, output_file, version)
 
-    async def _stream_text_to_speech(self, request: TTSRequestV2, 
-                                    output_file: Optional[str] = None,
-                                    version: Optional[Versions] = Versions.v2) -> AsyncGenerator[bytes, None]:
+    async def _stream_text_to_speech(
+        self,
+        request: TTSRequestV2,
+        output_file: Optional[str] = None,
+        version: Optional[Versions] = Versions.v2,
+    ) -> AsyncGenerator[bytes, None]:
         request_data = request.dict()
         response = await self.client._make_streaming_request(
             method=DjeliaRequest.tts_stream.method,
             endpoint=DjeliaRequest.tts_stream.endpoint.format(version.value),
-            json=request_data
+            json=request_data,
         )
-        
+
         audio_chunks = []
         try:
             async for chunk in response.content.iter_chunked(8192):
@@ -137,14 +174,15 @@ class AsyncTTS:
                     yield chunk
         finally:
             await response.close()
-        
+
         if output_file:
             try:
-                with open(output_file, 'wb') as f:
+                with open(output_file, "wb") as f:
                     for chunk in audio_chunks:
                         f.write(chunk)
             except IOError as e:
                 raise IOError(ErrorsMessage.ioerror_save.format(str(e)))
+
 
 # from typing import Union, Optional, Generator, AsyncGenerator
 # from djelia.models import (DjeliaRequest, TTSRequest, TTSRequestV2, Versions, ErrorsMessage)
@@ -155,7 +193,7 @@ class AsyncTTS:
 #     def __init__(self, client):
 #         self.client = client
 
-#     def text_to_speech(self, request: Union[TTSRequest, TTSRequestV2], 
+#     def text_to_speech(self, request: Union[TTSRequest, TTSRequestV2],
 #                       output_file: Optional[str] = None,
 #                       stream: Optional[bool] = False,
 #                       version: Optional[Versions] = Versions.v1) -> Union[bytes, str, Generator]:
@@ -165,7 +203,7 @@ class AsyncTTS:
 #                 raise ValueError(ErrorsMessage.tts_v1_request_error)
 #             if request.speaker not in VALID_SPEAKER_IDS:
 #                 raise SpeakerError(ErrorsMessage.speaker_id_error.format(VALID_SPEAKER_IDS, request.speaker))
-#         else:  
+#         else:
 #             if not isinstance(request, TTSRequestV2):
 #                 raise ValueError(ErrorsMessage.tts_v2_request_error)
 #             speaker_found = any(speaker.lower() in request.description.lower() for speaker in VALID_TTS_V2_SPEAKERS)
@@ -179,7 +217,7 @@ class AsyncTTS:
 #                 endpoint=DjeliaRequest.tts.endpoint.format(version.value),
 #                 json=data
 #             )
-            
+
 #             if output_file:
 #                 try:
 #                     with open(output_file, 'wb') as f:
@@ -194,7 +232,7 @@ class AsyncTTS:
 #                 raise ValueError(ErrorsMessage.tts_streaming_conpatibility)
 #             return self._stream_text_to_speech(request, output_file, version)
 
-#     def _stream_text_to_speech(self, request: TTSRequestV2, 
+#     def _stream_text_to_speech(self, request: TTSRequestV2,
 #                               output_file: Optional[str] = None,
 #                               version: Optional[Versions] = Versions.v2) -> Generator[bytes, None, None]:
 #         data = request.dict()
@@ -204,13 +242,13 @@ class AsyncTTS:
 #             json=data,
 #             stream=True
 #         )
-        
+
 #         audio_chunks = []
 #         for chunk in response.iter_content(chunk_size=8192):
 #             if chunk:
 #                 audio_chunks.append(chunk)
 #                 yield chunk
-        
+
 #         if output_file:
 #             try:
 #                 with open(output_file, 'wb') as f:
@@ -224,7 +262,7 @@ class AsyncTTS:
 #     def __init__(self, client):
 #         self.client = client
 
-#     async def text_to_speech(self, request: Union[TTSRequest, TTSRequestV2], 
+#     async def text_to_speech(self, request: Union[TTSRequest, TTSRequestV2],
 #                             output_file: Optional[str] = None,
 #                             stream: Optional[bool] = False,
 #                             version: Optional[Versions] = Versions.v1) -> Union[bytes, str, AsyncGenerator]:
@@ -248,7 +286,7 @@ class AsyncTTS:
 #                 endpoint=DjeliaRequest.tts.endpoint.format(version.value),
 #                 json=request_data
 #             )
-            
+
 #             if output_file:
 #                 try:
 #                     with open(output_file, 'wb') as f:
@@ -265,7 +303,7 @@ class AsyncTTS:
 #             return self._stream_text_to_speech(request, output_file, version)
 
 
-#     async def _stream_text_to_speech(self, request: TTSRequestV2, 
+#     async def _stream_text_to_speech(self, request: TTSRequestV2,
 #                                     output_file: Optional[str] = None,
 #                                     version: Optional[Versions] = Versions.v2) -> AsyncGenerator[bytes, None]:
 #         request_data = request.dict()
@@ -274,7 +312,7 @@ class AsyncTTS:
 #             endpoint=DjeliaRequest.tts_stream.endpoint.format(version.value),
 #             json=request_data
 #         )
-        
+
 #         audio_chunks = []
 #         try:
 #             async for chunk in response.content.iter_chunked(8192):
@@ -283,7 +321,7 @@ class AsyncTTS:
 #                     yield chunk
 #         finally:
 #             await response.close() # Ensure the response is closed
-        
+
 #         if output_file:
 #             try:
 #                 with open(output_file, 'wb') as f:
@@ -293,12 +331,7 @@ class AsyncTTS:
 #                 raise IOError(ErrorsMessage.ioerror_save.format(str(e)))
 
 
-
-
-
-
 # from typing import Union, Optional, Generator, AsyncGenerator
 # from djelia.models import (DjeliaRequest, TTSRequest, TTSRequestV2, Versions, ErrorsMessage)
 # from djelia.config.settings import VALID_SPEAKER_IDS, VALID_TTS_V2_SPEAKERS
 # from djelia.utils.exceptions import SpeakerError
-
