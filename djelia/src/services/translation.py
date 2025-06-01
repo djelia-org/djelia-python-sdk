@@ -1,7 +1,12 @@
 from typing import List, Optional
 
-from djelia.models import (DjeliaRequest, SupportedLanguageSchema,
-                           TranslationRequest, TranslationResponse, Versions)
+from djelia.models import (
+    DjeliaRequest,
+    SupportedLanguageSchema,
+    TranslationRequest,
+    TranslationResponse,
+    Versions,
+)
 
 
 class Translation:

@@ -4,9 +4,14 @@ from typing import AsyncGenerator, BinaryIO, Generator, List, Optional, Union
 
 import aiohttp
 
-from djelia.models import (DjeliaRequest, ErrorsMessage,
-                           FrenchTranscriptionResponse, Params,
-                           TranscriptionSegment, Versions)
+from djelia.models import (
+    DjeliaRequest,
+    ErrorsMessage,
+    FrenchTranscriptionResponse,
+    Params,
+    TranscriptionSegment,
+    Versions,
+)
 
 
 class Transcription:
