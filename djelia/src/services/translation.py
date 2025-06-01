@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from djelia.models import (
     DjeliaRequest,
     SupportedLanguageSchema,
@@ -13,7 +11,7 @@ class Translation:
     def __init__(self, client):
         self.client = client
 
-    def get_supported_languages(self) -> List[SupportedLanguageSchema]:
+    def get_supported_languages(self) -> list[SupportedLanguageSchema]:
         response = self.client._make_request(
             method=DjeliaRequest.get_supported_languages.method,
             endpoint=DjeliaRequest.get_supported_languages.endpoint.format(
@@ -25,7 +23,7 @@ class Translation:
     def translate(
         self,
         request: TranslationRequest,
-        version: Optional[Versions] = Versions.v1.value,
+        version: Versions | None = Versions.v1.value,
     ) -> TranslationResponse:
         data = request.dict()
         response = self.client._make_request(
@@ -40,7 +38,7 @@ class AsyncTranslation:
     def __init__(self, client):
         self.client = client
 
-    async def get_supported_languages(self) -> List[SupportedLanguageSchema]:
+    async def get_supported_languages(self) -> list[SupportedLanguageSchema]:
         data = await self.client._make_request(
             method=DjeliaRequest.get_supported_languages.method,
             endpoint=DjeliaRequest.get_supported_languages.endpoint.format(
@@ -50,7 +48,7 @@ class AsyncTranslation:
         return [SupportedLanguageSchema(**lang) for lang in data]
 
     async def translate(
-        self, request: TranslationRequest, version: Optional[Versions] = Versions.v1
+        self, request: TranslationRequest, version: Versions | None = Versions.v1
     ) -> TranslationResponse:
         request_data = request.dict()
         data = await self.client._make_request(

@@ -1,13 +1,12 @@
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 from dotenv import load_dotenv
 
 
 @dataclass
 class Config:
-    api_key: Optional[str] = None
+    api_key: str | None = None
     audio_file_path: str = "audio.wav"
     max_stream_segments: int = 3
     max_stream_chunks: int = 5

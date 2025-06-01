@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from djelia.utils.exceptions import (
     APIError,
@@ -9,7 +9,7 @@ from djelia.utils.exceptions import (
 
 
 class ExceptionMessage:
-    messages: Dict[int, str] = {
+    messages: dict[int, str] = {
         401: "Invalid or expired API key",
         403: "Forbidden: You do not have permission to access this resource",
         404: "Resource not found",
@@ -20,7 +20,7 @@ class ExceptionMessage:
 
 
 class CodeStatusExceptions:
-    exceptions: Dict[int, Any] = {
+    exceptions: dict[int, Any] = {
         401: AuthenticationError,
         403: APIError,
         404: APIError,

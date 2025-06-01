@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -70,13 +69,13 @@ class TranslationRequest(BaseModel):
 
 class TTSRequest(BaseModel):
     text: str
-    speaker: Optional[int] = 1
+    speaker: int | None = 1
 
 
 class TTSRequestV2(BaseModel):
     text: str = Field(..., max_length=1000)
     description: str
-    chunk_size: Optional[float] = Field(default=1.0, ge=0.1, le=2.0)
+    chunk_size: float | None = Field(default=1.0, ge=0.1, le=2.0)
 
 
 class SupportedLanguageSchema(BaseModel):

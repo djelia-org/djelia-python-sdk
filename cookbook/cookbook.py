@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import traceback
-from typing import List
 from uuid import uuid4
 
 from djelia import Djelia, DjeliaAsync
@@ -78,7 +77,7 @@ class DjeliaCookbook:
         )
 
         try:
-            languages: List[SupportedLanguageSchema] = (
+            languages: list[SupportedLanguageSchema] = (
                 self.sync_client.translation.get_supported_languages()
             )
             print_success(f"Supported languages: {len(languages)}")

@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Generator, Optional, Union
+from collections.abc import AsyncGenerator, Generator
 
 from djelia.config.settings import VALID_SPEAKER_IDS, VALID_TTS_V2_SPEAKERS
 from djelia.models import (
@@ -17,11 +17,11 @@ class TTS:
 
     def text_to_speech(
         self,
-        request: Union[TTSRequest, TTSRequestV2],
-        output_file: Optional[str] = None,
-        stream: Optional[bool] = False,
-        version: Optional[Versions] = Versions.v1,
-    ) -> Union[bytes, str, Generator]:
+        request: TTSRequest | TTSRequestV2,
+        output_file: str | None = None,
+        stream: bool | None = False,
+        version: Versions | None = Versions.v1,
+    ) -> bytes | str | Generator:
         if version == Versions.v1:
             if not isinstance(request, TTSRequest):
                 raise ValueError(ErrorsMessage.tts_v1_request_error)
@@ -58,8 +58,8 @@ class TTS:
                     with open(output_file, "wb") as f:
                         f.write(response.content)
                     return output_file
-                except IOError as e:
-                    raise IOError(ErrorsMessage.ioerror_save.format(str(e)))
+                except OSError as e:
+                    raise OSError(ErrorsMessage.ioerror_save.format(str(e)))
             else:
                 return response.content
         else:
@@ -70,8 +70,8 @@ class TTS:
     def _stream_text_to_speech(
         self,
         request: TTSRequestV2,
-        output_file: Optional[str] = None,
-        version: Optional[Versions] = Versions.v2,
+        output_file: str | None = None,
+        version: Versions | None = Versions.v2,
     ) -> Generator[bytes, None, None]:
         data = request.dict()
         response = self.client._make_request(
@@ -92,8 +92,8 @@ class TTS:
                 with open(output_file, "wb") as f:
                     for chunk in audio_chunks:
                         f.write(chunk)
-            except IOError as e:
-                raise IOError(ErrorsMessage.ioerror_save.format(str(e)))
+            except OSError as e:
+                raise OSError(ErrorsMessage.ioerror_save.format(str(e)))
 
 
 class AsyncTTS:
@@ -102,11 +102,11 @@ class AsyncTTS:
 
     async def text_to_speech(
         self,
-        request: Union[TTSRequest, TTSRequestV2],
-        output_file: Optional[str] = None,
-        stream: Optional[bool] = False,
-        version: Optional[Versions] = Versions.v1,
-    ) -> Union[bytes, str, AsyncGenerator]:
+        request: TTSRequest | TTSRequestV2,
+        output_file: str | None = None,
+        stream: bool | None = False,
+        version: Versions | None = Versions.v1,
+    ) -> bytes | str | AsyncGenerator:
         if version == Versions.v1:
             if not isinstance(request, TTSRequest):
                 raise ValueError(ErrorsMessage.tts_v1_request_error)
@@ -143,8 +143,8 @@ class AsyncTTS:
                     with open(output_file, "wb") as f:
                         f.write(content)
                     return output_file
-                except IOError as e:
-                    raise IOError(ErrorsMessage.ioerror_save.format(str(e)))
+                except OSError as e:
+                    raise OSError(ErrorsMessage.ioerror_save.format(str(e)))
             else:
                 return content
         else:
@@ -156,8 +156,8 @@ class AsyncTTS:
     async def _stream_text_to_speech(
         self,
         request: TTSRequestV2,
-        output_file: Optional[str] = None,
-        version: Optional[Versions] = Versions.v2,
+        output_file: str | None = None,
+        version: Versions | None = Versions.v2,
     ) -> AsyncGenerator[bytes, None]:
         request_data = request.dict()
         response = await self.client._make_streaming_request(
@@ -180,5 +180,5 @@ class AsyncTTS:
                 with open(output_file, "wb") as f:
                     for chunk in audio_chunks:
                         f.write(chunk)
-            except IOError as e:
-                raise IOError(ErrorsMessage.ioerror_save.format(str(e)))
+            except OSError as e:
+                raise OSError(ErrorsMessage.ioerror_save.format(str(e)))

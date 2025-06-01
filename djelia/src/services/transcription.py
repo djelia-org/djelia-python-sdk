@@ -1,6 +1,7 @@
 import json
 import os
-from typing import AsyncGenerator, BinaryIO, Generator, List, Optional, Union
+from collections.abc import AsyncGenerator, Generator
+from typing import BinaryIO
 
 import aiohttp
 
@@ -20,11 +21,11 @@ class Transcription:
 
     def transcribe(
         self,
-        audio_file: Union[str, BinaryIO],
-        translate_to_french: Optional[bool] = False,
-        stream: Optional[bool] = False,
-        version: Optional[Versions] = Versions.v2,
-    ) -> Union[List[TranscriptionSegment], FrenchTranscriptionResponse, Generator]:
+        audio_file: str | BinaryIO,
+        translate_to_french: bool | None = False,
+        stream: bool | None = False,
+        version: Versions | None = Versions.v2,
+    ) -> list[TranscriptionSegment] | FrenchTranscriptionResponse | Generator:
         if not stream:
             try:
                 params = {Params.translate_to_french: str(translate_to_french).lower()}
@@ -50,8 +51,8 @@ class Transcription:
                         params=params,
                     )
 
-            except IOError as e:
-                raise IOError(ErrorsMessage.ioerror_read.format(str(e)))
+            except OSError as e:
+                raise OSError(ErrorsMessage.ioerror_read.format(str(e)))
 
             data = response.json()
             return (
@@ -65,12 +66,10 @@ class Transcription:
 
     def _stream_transcribe(
         self,
-        audio_file: Union[str, BinaryIO],
+        audio_file: str | BinaryIO,
         translate_to_french: bool = False,
-        version: Optional[Versions] = Versions.v2,
-    ) -> Generator[
-        Union[TranscriptionSegment, FrenchTranscriptionResponse], None, None
-    ]:
+        version: Versions | None = Versions.v2,
+    ) -> Generator[TranscriptionSegment | FrenchTranscriptionResponse, None, None]:
         try:
             params = {Params.translate_to_french: str(translate_to_french).lower()}
             if isinstance(audio_file, str):
@@ -93,8 +92,8 @@ class Transcription:
                     params=params,
                 )
 
-        except IOError as e:
-            raise IOError(ErrorsMessage.ioerror_read.format(str(e)))
+        except OSError as e:
+            raise OSError(ErrorsMessage.ioerror_read.format(str(e)))
 
         for line in response.iter_lines():
             if line:
@@ -123,11 +122,11 @@ class AsyncTranscription:
 
     async def transcribe(
         self,
-        audio_file: Union[str, BinaryIO],
-        translate_to_french: Optional[bool] = False,
-        stream: Optional[bool] = False,
-        version: Optional[Versions] = Versions.v2,
-    ) -> Union[List[TranscriptionSegment], FrenchTranscriptionResponse, AsyncGenerator]:
+        audio_file: str | BinaryIO,
+        translate_to_french: bool | None = False,
+        stream: bool | None = False,
+        version: Versions | None = Versions.v2,
+    ) -> list[TranscriptionSegment] | FrenchTranscriptionResponse | AsyncGenerator:
         if not stream:
             try:
                 data = aiohttp.FormData()
@@ -149,8 +148,8 @@ class AsyncTranscription:
                     params=params,
                 )
 
-            except IOError as e:
-                raise IOError(ErrorsMessage.ioerror_read.format(str(e)))
+            except OSError as e:
+                raise OSError(ErrorsMessage.ioerror_read.format(str(e)))
 
             return (
                 FrenchTranscriptionResponse(**response_data)
@@ -163,10 +162,10 @@ class AsyncTranscription:
 
     async def _stream_transcribe(
         self,
-        audio_file: Union[str, BinaryIO],
+        audio_file: str | BinaryIO,
         translate_to_french: bool = False,
-        version: Optional[Versions] = Versions.v2,
-    ) -> AsyncGenerator[Union[TranscriptionSegment, FrenchTranscriptionResponse], None]:
+        version: Versions | None = Versions.v2,
+    ) -> AsyncGenerator[TranscriptionSegment | FrenchTranscriptionResponse, None]:
         try:
             data = aiohttp.FormData()
             if isinstance(audio_file, str):
@@ -184,8 +183,8 @@ class AsyncTranscription:
                 data=data,
                 params=params,
             )
-        except IOError as e:
-            raise IOError(ErrorsMessage.ioerror_read.format(str(e)))
+        except OSError as e:
+            raise OSError(ErrorsMessage.ioerror_read.format(str(e)))
 
         try:
             if hasattr(response, "content") and response.content:

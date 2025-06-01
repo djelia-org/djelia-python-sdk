@@ -1,5 +1,4 @@
 import logging
-from typing import List, Union
 
 from djelia.models import FrenchTranscriptionResponse, TranscriptionSegment
 
@@ -50,7 +49,7 @@ def print_summary(test_results: dict) -> None:
 
 
 def handle_transcription_result(
-    transcription: Union[List[TranscriptionSegment], FrenchTranscriptionResponse],
+    transcription: list[TranscriptionSegment] | FrenchTranscriptionResponse,
     version_info: str,
 ) -> None:
     if isinstance(transcription, list) and transcription:
