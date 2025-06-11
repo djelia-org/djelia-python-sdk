@@ -29,6 +29,10 @@ Hey there! Welcome to this fun and practical workshop on using the Djelia Python
 
 Let's kick things off by installing the Djelia Python SDK with  one of those magical commands. Run it in your terminal, and you're good to go!
 
+```bash
+    pip install djelia
+```
+
 
 Install the Djelia Python SDK directly from GitHub:
 ```bash
@@ -36,6 +40,12 @@ Install the Djelia Python SDK directly from GitHub:
 ```
 
 Alternatively, use uv for faster dependency resolution:
+
+
+```bash
+    uv pip install djelia
+```
+
 
 ```bash
     uv pip install git+https://github.com/djelia/djelia-python-sdk.git
