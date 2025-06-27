@@ -3,8 +3,6 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from djelia.config.settings import BASE_URL, ENV_API_KEY
-
 
 class Language(str, Enum):
     FRENCH = "fra_Latn"
@@ -35,7 +33,7 @@ class HttpRequestInfo:
 
 
 class DjeliaRequest:
-    endpoint_prefix = f"{BASE_URL}/api/v{{}}/models/"
+    endpoint_prefix = "https://djelia.cloud/api/v{}/models/"
 
     get_supported_languages: HttpRequestInfo = HttpRequestInfo(
         endpoint=endpoint_prefix + "translate/supported-languages", method="GET"
@@ -111,7 +109,7 @@ class ErrorsMessage:
     )
     speaker_id_error: str = "Speaker ID must be one of {}, got {}"
     api_key_missing: str = (
-        f"API key must be provided via parameter or {ENV_API_KEY} environment variable"
+        "API key must be provided via parameter or environment variable"
     )
     tts_v1_request_error: str = "TTSRequest required for V1"
     tts_v2_request_error: str = "TTSRequestV2 required for V2"
