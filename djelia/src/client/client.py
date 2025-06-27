@@ -2,23 +2,13 @@ from typing import Union
 
 import aiohttp
 import requests
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_random_exponential,
-)
+from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
+                      wait_random_exponential)
 
 from djelia.config.settings import Settings
 from djelia.src.auth import Auth
-from djelia.src.services import (
-    TTS,
-    AsyncTranscription,
-    AsyncTranslation,
-    AsyncTTS,
-    Transcription,
-    Translation,
-)
+from djelia.src.services import (TTS, AsyncTranscription, AsyncTranslation,
+                                 AsyncTTS, Transcription, Translation)
 from djelia.utils.errors import api_exception, general_exception
 
 
