@@ -8,7 +8,7 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="djelia",
-    version="1.0.1",
+    version="1.1.1",
     author="Djelia",
     author_email="support@djelia.cloud",
     description="Djelia Python SDK - Advanced AI for African Languages",
@@ -43,7 +43,8 @@ setup(
     install_requires=[
         "requests>=2.25.0",
         "aiohttp>=3.8.0",
-        "pydantic>=1.8.0,<2.0.0",
+        "pydantic-settings>=2.10.1",
+        "pydantic>=2.7.0",
         "tenacity>=9.1.2",
     ],
     extras_require={

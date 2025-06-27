@@ -1,8 +1,11 @@
+from typing import Union
+
 import aiohttp
 import requests
 from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
                       wait_random_exponential)
 
+from djelia.config.settings import Settings
 from djelia.src.auth import Auth
 from djelia.src.services import (TTS, AsyncTranscription, AsyncTranslation,
                                  AsyncTTS, Transcription, Translation)
@@ -10,8 +13,22 @@ from djelia.utils.errors import api_exception, general_exception
 
 
 class Djelia:
-    def __init__(self, api_key: str = None):
-        self.auth = Auth(api_key)
+    def __init__(
+        self, api_key: Union[str, None] = None, base_url: Union[str, None] = None
+    ):
+        self.settings = None
+        if base_url is None:
+            self.settings = Settings()
+            self.base_url = self.settings.base_url
+        else:
+            self.base_url = self.base_url
+
+        if api_key is None:
+            self.settings = Settings()
+            self.auth = Auth(self.settings.djelia_api_key)
+        else:
+            self.auth = Auth(api_key=api_key)
+
         self.translation = Translation(self)
         self.transcription = Transcription(self)
         self.tts = TTS(self)
@@ -41,8 +58,22 @@ class Djelia:
 
 
 class DjeliaAsync:
-    def __init__(self, api_key: str = None):
-        self.auth = Auth(api_key)
+    def __init__(
+        self, api_key: Union[str, None] = None, base_url: Union[str, None] = None
+    ):
+        self.settings = None
+        if base_url is None:
+            self.settings = Settings()
+            self.base_url = self.settings.base_url
+        else:
+            self.base_url = self.base_url
+
+        if api_key is None:
+            self.settings = Settings()
+            self.auth = Auth(self.settings.djelia_api_key)
+        else:
+            self.auth = Auth(api_key=api_key)
+
         self.translation = AsyncTranslation(self)
         self.transcription = AsyncTranscription(self)
         self.tts = AsyncTTS(self)

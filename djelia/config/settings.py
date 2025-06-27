@@ -1,8 +1,14 @@
-BASE_URL = "https://djelia.cloud"
-API_KEY_HEADER = "x-api-key"
-ENV_API_KEY = "DJELIA_API_KEY"
+from typing import List
 
-VALID_SPEAKER_IDS = [0, 1, 2, 3, 4]
-DEFAULT_SPEAKER_ID = 1
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
-VALID_TTS_V2_SPEAKERS = ["Moussa", "Sekou", "Seydou"]
+
+class Settings(BaseSettings):
+    base_url: str = Field(validation_alias="BASE_URL", default="https://djelia.cloud")
+    djelia_api_key: str = Field(validation_alias="DJELIA_API_KEY")
+    valid_speaker_ids: List[int] = Field(default_factory=lambda: [0, 1, 2, 3, 4])
+    valid_tts_v2_speakers: List[str] = Field(
+        default_factory=lambda: ["Moussa", "Sekou", "Seydou"]
+    )
+    default_speaker_id: int = 1

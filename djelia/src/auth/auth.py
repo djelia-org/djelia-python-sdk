@@ -1,15 +1,13 @@
-# from djelia.config.settings import API_KEY_HEADER, ENV_API_KEY
-import os
-
-from djelia.models.models import API_KEY_HEADER, ENV_API_KEY, ErrorsMessage
+from djelia.models.models import ErrorsMessage
+from djelia.utils.utils import is_valid_uuid
 
 
 class Auth:
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.environ.get(ENV_API_KEY)
+        self.api_key = api_key
 
-        if not self.api_key:
+        if not is_valid_uuid(self.api_key):
             raise ValueError(ErrorsMessage.api_key_missing)
 
     def get_headers(self):
-        return {API_KEY_HEADER: self.api_key}
+        return {"x-api-key": self.api_key}

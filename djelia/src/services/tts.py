@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator, Generator
 
-from djelia.config.settings import VALID_SPEAKER_IDS, VALID_TTS_V2_SPEAKERS
+# from djelia.config.settings import VALID_SPEAKER_IDS, VALID_TTS_V2_SPEAKERS
 from djelia.models import (DjeliaRequest, ErrorsMessage, TTSRequest,
                            TTSRequestV2, Versions)
 from djelia.utils.exceptions import SpeakerError
@@ -20,10 +20,10 @@ class TTS:
         if version == Versions.v1:
             if not isinstance(request, TTSRequest):
                 raise ValueError(ErrorsMessage.tts_v1_request_error)
-            if request.speaker not in VALID_SPEAKER_IDS:
+            if request.speaker not in self.client.settings.valid_speaker_ids:
                 raise SpeakerError(
                     ErrorsMessage.speaker_id_error.format(
-                        VALID_SPEAKER_IDS, request.speaker
+                        self.client.settings.valid_speaker_ids, request.speaker
                     )
                 )
         else:
@@ -31,12 +31,12 @@ class TTS:
                 raise ValueError(ErrorsMessage.tts_v2_request_error)
             speaker_found = any(
                 speaker.lower() in request.description.lower()
-                for speaker in VALID_TTS_V2_SPEAKERS
+                for speaker in self.client.settings.valid_tts_v2_speakers
             )
             if not speaker_found:
                 raise SpeakerError(
                     ErrorsMessage.speaker_description_error.format(
-                        VALID_TTS_V2_SPEAKERS
+                        self.client.settings.valid_tts_v2_speakers
                     )
                 )
 
@@ -105,10 +105,10 @@ class AsyncTTS:
         if version == Versions.v1:
             if not isinstance(request, TTSRequest):
                 raise ValueError(ErrorsMessage.tts_v1_request_error)
-            if request.speaker not in VALID_SPEAKER_IDS:
+            if request.speaker not in self.client.settings.valid_speaker_ids:
                 raise SpeakerError(
                     ErrorsMessage.speaker_id_error.format(
-                        VALID_SPEAKER_IDS, request.speaker
+                        self.client.settings.valid_speaker_ids, request.speaker
                     )
                 )
         else:
@@ -116,12 +116,12 @@ class AsyncTTS:
                 raise ValueError(ErrorsMessage.tts_v2_request_error)
             speaker_found = any(
                 speaker.lower() in request.description.lower()
-                for speaker in VALID_TTS_V2_SPEAKERS
+                for speaker in self.client.settings.valid_tts_v2_speakers
             )
             if not speaker_found:
                 raise SpeakerError(
                     ErrorsMessage.speaker_description_error.format(
-                        VALID_TTS_V2_SPEAKERS
+                        self.client.settings.valid_tts_v2_speakers
                     )
                 )
 
