@@ -9,7 +9,7 @@ We, as contributors and maintainers, pledge to make participation in the Djelia 
 - Avoid harassing, offensive, or discriminatory behavior.
 
 ## Enforcement
-Inappropriate behavior can be reported to [support@naboopay.com](mailto:support@djelia.cloud) or by messaging `@sudoping01` or `lodjim` on GitHub. All reports will be reviewed and addressed promptly.
+Inappropriate behavior can be reported to [support@djelia.cloud](mailto:support@djelia.cloud) or by messaging `@sudoping01` on GitHub. All reports will be reviewed and addressed promptly.
 
 ## Attribution
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1.
