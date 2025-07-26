@@ -51,8 +51,6 @@ Alternatively, use uv for faster dependency resolution:
     uv pip install git+https://github.com/djelia/djelia-python-sdk.git
 ```
 
-<span style="color:red">Note:</span> A PyPI package (pip install djelia) is coming soon stay tuned!
-
 
 ## <h3 style="color:#00FFFF;"> Client Initialization
 
