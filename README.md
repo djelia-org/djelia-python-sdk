@@ -36,7 +36,7 @@ Let's kick things off by installing the Djelia Python SDK with  one of those mag
 
 Install the Djelia Python SDK directly from GitHub:
 ```bash
-    pip install git+https://github.com/djelia/djelia-python-sdk.git
+    pip install git+https://github.com/djelia-org/djelia-python-sdk.git
 ```
 
 Alternatively, use uv for faster dependency resolution:
@@ -48,7 +48,7 @@ Alternatively, use uv for faster dependency resolution:
 
 
 ```bash
-    uv pip install git+https://github.com/djelia/djelia-python-sdk.git
+    uv pip install git+https://github.com/djelia-org/djelia-python-sdk.git
 ```
 
 
