@@ -613,8 +613,8 @@ Want to take your Djelia SDK skills to the next level? Check out the **Djelia SD
 To run the cookbook, clone the repository, install dependencies, and execute:
 
 ```bash
-git clone https://github.com/djelia/djelia-python-sdk.git
-pip install git+https://github.com/djelia/djelia-python-sdk.git python-dotenv
+git clone https://github.com/djelia-org/djelia-python-sdk.git
+pip install git+https://github.com/djelia-org/djelia-python-sdk.git python-dotenv
 
 cd djelia-python-sdk
 python -m cookbook.main
