@@ -32,7 +32,7 @@ To contribute, you'll need:
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/djelia/djelia-python-sdk.git
+   git clone https://github.com/djelia-org/djelia-python-sdk.git
    cd djelia-python-sdk
    ```
 
@@ -73,7 +73,7 @@ To contribute, you'll need:
 ### Reporting Bugs
 
 Found a bug? Help us squash it! 
-- Check the [issue tracker](https://github.com/djelia/djelia-python-sdk/issues) to ensure the bug hasn't been reported.
+- Check the [issue tracker](https://github.com/djelia-org/djelia-python-sdk/issues) to ensure the bug hasn't been reported.
 - Use the [bug report template](.github/ISSUE_TEMPLATE/bug_report.md) to submit a new issue.
 - Include:
   - A clear description of the bug.
@@ -94,7 +94,7 @@ Have an idea to make the SDK even better?
 
 Ready to contribute code or documentation? Here's how:
 1. **Fork the Repository**:
-   Fork the [Djelia Python SDK repo](https://github.com/djelia/djelia-python-sdk) and clone your fork:
+   Fork the [Djelia Python SDK repo](https://github.com/djelia-org/djelia-python-sdk) and clone your fork:
    ```bash
    git clone https://github.com/your-username/djelia-python-sdk.git
    ```
