@@ -21,7 +21,7 @@ class Djelia:
             self.settings = Settings()
             self.base_url = self.settings.base_url
         else:
-            self.base_url = self.base_url
+            self.base_url = base_url
 
         if api_key is None:
             self.settings = Settings()
