@@ -7,28 +7,41 @@ from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
 
 from djelia.config.settings import Settings
 from djelia.src.auth import Auth
-from djelia.src.services import (TTS, AsyncTranscription, AsyncTranslation,
-                                 AsyncTTS, Transcription, Translation)
+from djelia.src.services import (TTS, AsyncAudio, AsyncTranscription,
+                                 AsyncTranslation, AsyncTranslations, AsyncTTS,
+                                 Audio, Transcription, Translation,
+                                 Translations)
 from djelia.utils.errors import api_exception, general_exception
+
+
+def _build_settings(
+    api_key: Union[str, None], base_url: Union[str, None]
+) -> Settings:
+    """Resolve settings, letting explicit args override environment variables.
+
+    Fields use validation aliases, so init overrides must be passed by alias.
+    """
+    overrides = {}
+    if api_key is not None:
+        overrides["DJELIA_API_KEY"] = api_key
+    if base_url is not None:
+        overrides["BASE_URL"] = base_url
+    return Settings(**overrides)
 
 
 class Djelia:
     def __init__(
         self, api_key: Union[str, None] = None, base_url: Union[str, None] = None
     ):
-        self.settings = None
-        if base_url is None:
-            self.settings = Settings()
-            self.base_url = self.settings.base_url
-        else:
-            self.base_url = base_url
+        self.settings = _build_settings(api_key, base_url)
+        self.base_url = self.settings.base_url
+        self.auth = Auth(self.settings.djelia_api_key)
 
-        if api_key is None:
-            self.settings = Settings()
-            self.auth = Auth(self.settings.djelia_api_key)
-        else:
-            self.auth = Auth(api_key=api_key)
+        # OpenAI-style resources
+        self.translations = Translations(self)
+        self.audio = Audio(self)
 
+        # Deprecated aliases (kept for backward compatibility)
         self.translation = Translation(self)
         self.transcription = Transcription(self)
         self.tts = TTS(self)
@@ -61,19 +74,15 @@ class DjeliaAsync:
     def __init__(
         self, api_key: Union[str, None] = None, base_url: Union[str, None] = None
     ):
-        self.settings = None
-        if base_url is None:
-            self.settings = Settings()
-            self.base_url = self.settings.base_url
-        else:
-            self.base_url = self.base_url
+        self.settings = _build_settings(api_key, base_url)
+        self.base_url = self.settings.base_url
+        self.auth = Auth(self.settings.djelia_api_key)
 
-        if api_key is None:
-            self.settings = Settings()
-            self.auth = Auth(self.settings.djelia_api_key)
-        else:
-            self.auth = Auth(api_key=api_key)
+        # OpenAI-style resources
+        self.translations = AsyncTranslations(self)
+        self.audio = AsyncAudio(self)
 
+        # Deprecated aliases (kept for backward compatibility)
         self.translation = AsyncTranslation(self)
         self.transcription = AsyncTranscription(self)
         self.tts = AsyncTTS(self)
