@@ -6,8 +6,7 @@ from uuid import uuid4
 
 from djelia import Djelia, DjeliaAsync
 from djelia.models import (Language, SupportedLanguageSchema,
-                           TranslationRequest, TranslationResponse, TTSRequest,
-                           TTSRequestV2, Versions)
+                           TranslationResponse, Versions)
 
 from .config import Config
 from .utils import (ConsoleColor, handle_transcription_result, print_error,
@@ -65,14 +64,13 @@ class DjeliaCookbook:
 
         try:
             languages: list[SupportedLanguageSchema] = (
-                self.sync_client.translation.get_supported_languages()
+                self.sync_client.translations.list_languages()
             )
             print_success(f"Supported languages: {len(languages)}")
 
             for text, source, target in self.translation_samples:
-                request = TranslationRequest(text=text, source=source, target=target)
-                response: TranslationResponse = self.sync_client.translation.translate(
-                    request=request, version=Versions.v1
+                response: TranslationResponse = self.sync_client.translations.create(
+                    text=text, source=source, target=target, model=Versions.v1
                 )
                 print_success(
                     f"{source.value} → {target.value}: "
@@ -97,15 +95,12 @@ class DjeliaCookbook:
 
         async with self.async_client as client:
             try:
-                languages = await client.translation.get_supported_languages()
+                languages = await client.translations.list_languages()
                 print_success(f"Supported languages (async): {len(languages)}")
 
                 for text, source, target in self.translation_samples:
-                    request = TranslationRequest(
-                        text=text, source=source, target=target
-                    )
-                    response = await client.translation.translate(
-                        request=request, version=Versions.v1
+                    response = await client.translations.create(
+                        text=text, source=source, target=target, model=Versions.v1
                     )
                     print_success(
                         f"{source.value} → {target.value} (async): "
@@ -140,17 +135,17 @@ class DjeliaCookbook:
         for version in [Versions.v1, Versions.v2]:
             try:
                 print_info(f"Testing non-streaming v{version.value}")
-                transcription = self.sync_client.transcription.transcribe(
-                    self.config.audio_file_path, version=version
+                transcription = self.sync_client.audio.transcriptions.create(
+                    file=self.config.audio_file_path, model=version
                 )
                 handle_transcription_result(transcription, f"v{version.value}")
 
                 if version == Versions.v2:
                     print_info("Testing French translation")
-                    transcription_fr = self.sync_client.transcription.transcribe(
-                        self.config.audio_file_path,
+                    transcription_fr = self.sync_client.audio.transcriptions.create(
+                        file=self.config.audio_file_path,
                         translate_to_french=True,
-                        version=version,
+                        model=version,
                     )
                     print_success(
                         f"French translation (v{version.value}): "
@@ -182,8 +177,8 @@ class DjeliaCookbook:
             for version in [Versions.v1, Versions.v2]:
                 try:
                     print_info(f"Testing non-streaming v{version.value}")
-                    transcription = await client.transcription.transcribe(
-                        self.config.audio_file_path, version=version
+                    transcription = await client.audio.transcriptions.create(
+                        file=self.config.audio_file_path, model=version
                     )
                     handle_transcription_result(
                         transcription, f"v{version.value} (async)"
@@ -191,10 +186,10 @@ class DjeliaCookbook:
 
                     if version == Versions.v2:
                         print_info("Testing French translation")
-                        transcription_fr = await client.transcription.transcribe(
-                            self.config.audio_file_path,
+                        transcription_fr = await client.audio.transcriptions.create(
+                            file=self.config.audio_file_path,
                             translate_to_french=True,
-                            version=version,
+                            model=version,
                         )
                         print_success(
                             f"French translation (async): "
@@ -231,8 +226,8 @@ class DjeliaCookbook:
                 print_info(f"Testing streaming v{version.value}")
                 segment_count = 0
 
-                for segment in self.sync_client.transcription.transcribe(
-                    self.config.audio_file_path, stream=True, version=version
+                for segment in self.sync_client.audio.transcriptions.create(
+                    file=self.config.audio_file_path, stream=True, model=version
                 ):
                     segment_count += 1
                     print_success(
@@ -253,11 +248,11 @@ class DjeliaCookbook:
                     print_info("Testing streaming French translation")
                     segment_count = 0
 
-                    for segment in self.sync_client.transcription.transcribe(
-                        self.config.audio_file_path,
+                    for segment in self.sync_client.audio.transcriptions.create(
+                        file=self.config.audio_file_path,
                         stream=True,
                         translate_to_french=True,
-                        version=version,
+                        model=version,
                     ):
                         segment_count += 1
                         text = segment.text
@@ -303,8 +298,8 @@ class DjeliaCookbook:
                     print_info(f"Testing streaming v{version.value}")
                     segment_count = 0
 
-                    generator = await client.transcription.transcribe(
-                        self.config.audio_file_path, stream=True, version=version
+                    generator = await client.audio.transcriptions.create(
+                        file=self.config.audio_file_path, stream=True, model=version
                     )
 
                     async for segment in generator:
@@ -327,11 +322,11 @@ class DjeliaCookbook:
                         print_info("Testing streaming French translation")
                         segment_count = 0
 
-                        generator = await client.transcription.transcribe(
-                            self.config.audio_file_path,
+                        generator = await client.audio.transcriptions.create(
+                            file=self.config.audio_file_path,
                             stream=True,
                             translate_to_french=True,
-                            version=version,
+                            model=version,
                         )
 
                         async for segment in generator:
@@ -373,26 +368,23 @@ class DjeliaCookbook:
         )
 
         try:
-            tts_request_v1 = TTSRequest(text=self.bambara_tts_text, speaker=1)
-            audio_file_v1 = self.sync_client.tts.text_to_speech(
-                request=tts_request_v1,
+            audio_file_v1 = self.sync_client.audio.speech.create(
+                input=self.bambara_tts_text,
+                voice=1,
                 output_file=f"tts_sync_v1_{uuid4().hex}.wav",
-                version=Versions.v1,
+                model=Versions.v1,
             )
             print_success(
                 f"TTS v1 saved: {ConsoleColor.BLUE}{audio_file_v1}{ConsoleColor.RESET}"
             )
 
             for speaker in self.supported_speakers:
-                tts_request_v2 = TTSRequestV2(
-                    text=self.bambara_tts_text,
+                audio_file_v2 = self.sync_client.audio.speech.create(
+                    input=self.bambara_tts_text,
                     description=f"{speaker} speaks with natural tone",
                     chunk_size=1.0,
-                )
-                audio_file_v2 = self.sync_client.tts.text_to_speech(
-                    request=tts_request_v2,
                     output_file=f"tts_sync_v2_{speaker}_{uuid4().hex}.wav",
-                    version=Versions.v2,
+                    model=Versions.v2,
                 )
                 print_success(
                     f"TTS v2 ({speaker}): {ConsoleColor.BLUE}{audio_file_v2}{ConsoleColor.RESET}"
@@ -416,26 +408,23 @@ class DjeliaCookbook:
 
         async with self.async_client as client:
             try:
-                tts_request_v1 = TTSRequest(text=self.bambara_tts_text, speaker=1)
-                audio_file_v1 = await client.tts.text_to_speech(
-                    request=tts_request_v1,
+                audio_file_v1 = await client.audio.speech.create(
+                    input=self.bambara_tts_text,
+                    voice=1,
                     output_file=f"tts_async_v1_{uuid4().hex}.wav",
-                    version=Versions.v1,
+                    model=Versions.v1,
                 )
                 print_success(
                     f"TTS v1 saved: {ConsoleColor.BLUE}{audio_file_v1}{ConsoleColor.RESET}"
                 )
 
                 for speaker in self.supported_speakers:
-                    tts_request_v2 = TTSRequestV2(
-                        text=self.bambara_tts_text,
+                    audio_file_v2 = await client.audio.speech.create(
+                        input=self.bambara_tts_text,
                         description=f"{speaker} speaks with natural tone",
                         chunk_size=0.5,
-                    )
-                    audio_file_v2 = await client.tts.text_to_speech(
-                        request=tts_request_v2,
                         output_file=f"tts_async_v2_{speaker}_{uuid4().hex}.wav",
-                        version=Versions.v2,
+                        model=Versions.v2,
                     )
                     print_success(
                         f"TTS v2 ({speaker}): {ConsoleColor.BLUE}{audio_file_v2}{ConsoleColor.RESET}"
@@ -462,18 +451,15 @@ class DjeliaCookbook:
         )
 
         try:
-            tts_request = TTSRequestV2(
-                text=self.bambara_tts_text,
-                description=f"{self.supported_speakers[0]} speaks with natural conversational tone",
-            )
             chunk_count = 0
             total_bytes = 0
 
-            for audio_chunk in self.sync_client.tts.text_to_speech(
-                request=tts_request,
+            for audio_chunk in self.sync_client.audio.speech.create(
+                input=self.bambara_tts_text,
+                description=f"{self.supported_speakers[0]} speaks with natural conversational tone",
                 output_file=f"stream_tts_sync_{uuid4().hex}.wav",
                 stream=True,
-                version=Versions.v2,
+                model=Versions.v2,
             ):
                 chunk_count += 1
                 total_bytes += len(audio_chunk)
@@ -502,18 +488,15 @@ class DjeliaCookbook:
 
         async with self.async_client as client:
             try:
-                tts_request = TTSRequestV2(
-                    text=self.bambara_tts_text,
-                    description=f"{self.supported_speakers[0]} speaks with clear natural tone",
-                )
                 chunk_count = 0
                 total_bytes = 0
 
-                generator = await client.tts.text_to_speech(
-                    request=tts_request,
+                generator = await client.audio.speech.create(
+                    input=self.bambara_tts_text,
+                    description=f"{self.supported_speakers[0]} speaks with clear natural tone",
                     output_file=f"stream_tts_async_{uuid4().hex}.wav",
                     stream=True,
-                    version=Versions.v2,
+                    model=Versions.v2,
                 )
 
                 async for audio_chunk in generator:
@@ -552,27 +535,22 @@ class DjeliaCookbook:
             try:
                 print_info("Executing parallel operations...")
 
-                translation_request = TranslationRequest(
-                    text="Hello", source=Language.ENGLISH, target=Language.BAMBARA
-                )
-
-                tts_request = TTSRequestV2(
-                    text=self.bambara_tts_text,
-                    description=f"{self.supported_speakers[0]} speaks with clear speaking tone",
-                )
-
                 results = await asyncio.gather(
-                    client.translation.get_supported_languages(),
-                    client.translation.translate(
-                        translation_request, version=Versions.v1
+                    client.translations.list_languages(),
+                    client.translations.create(
+                        text="Hello",
+                        source=Language.ENGLISH,
+                        target=Language.BAMBARA,
+                        model=Versions.v1,
                     ),
-                    client.transcription.transcribe(
-                        self.config.audio_file_path, version=Versions.v1
+                    client.audio.transcriptions.create(
+                        file=self.config.audio_file_path, model=Versions.v1
                     ),
-                    client.tts.text_to_speech(
-                        tts_request,
+                    client.audio.speech.create(
+                        input=self.bambara_tts_text,
+                        description=f"{self.supported_speakers[0]} speaks with clear speaking tone",
                         output_file=f"parallel_tts_{uuid4().hex}.wav",
-                        version=Versions.v2,
+                        model=Versions.v2,
                     ),
                     return_exceptions=True,
                 )
@@ -614,36 +592,35 @@ class DjeliaCookbook:
         )
 
         try:
-            request = TranslationRequest(
-                text="Hello world", source=Language.ENGLISH, target=Language.BAMBARA
-            )
-            result = self.sync_client.translation.translate(
-                request=request, version=Versions.v1
+            result = self.sync_client.translations.create(
+                text="Hello world",
+                source=Language.ENGLISH,
+                target=Language.BAMBARA,
+                model=Versions.v1,
             )
             print_success(
                 f"Translation v1: '{ConsoleColor.YELLOW}{result.text}{ConsoleColor.RESET}'"
             )
 
             for version in [Versions.v1, Versions.v2]:
-                transcription = self.sync_client.transcription.transcribe(
-                    self.config.audio_file_path, version=version
+                transcription = self.sync_client.audio.transcriptions.create(
+                    file=self.config.audio_file_path, model=version
                 )
                 handle_transcription_result(transcription, f"v{version.value}")
 
-            tts_v1 = self.sync_client.tts.text_to_speech(
-                request=TTSRequest(text=self.bambara_tts_text, speaker=1),
+            tts_v1 = self.sync_client.audio.speech.create(
+                input=self.bambara_tts_text,
+                voice=1,
                 output_file=f"tts_v1_{uuid4().hex}.wav",
-                version=Versions.v1,
+                model=Versions.v1,
             )
             print_success(f"TTS v1: {ConsoleColor.BLUE}{tts_v1}{ConsoleColor.RESET}")
 
-            tts_v2 = self.sync_client.tts.text_to_speech(
-                request=TTSRequestV2(
-                    text=self.bambara_tts_text,
-                    description=f"{self.supported_speakers[0]} speaks with natural tone",
-                ),
+            tts_v2 = self.sync_client.audio.speech.create(
+                input=self.bambara_tts_text,
+                description=f"{self.supported_speakers[0]} speaks with natural tone",
                 output_file=f"tts_v2_{uuid4().hex}.wav",
-                version=Versions.v2,
+                model=Versions.v2,
             )
             print_success(f"TTS v2: {ConsoleColor.BLUE}{tts_v2}{ConsoleColor.RESET}")
 
