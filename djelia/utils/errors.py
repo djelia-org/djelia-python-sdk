@@ -26,9 +26,13 @@ class CodeStatusExceptions:
 
 
 def api_exception(code: int, error: Exception) -> Exception:
-    return CodeStatusExceptions.exceptions.get(code, APIError)(
-        ExceptionMessage.messages.get(code, ExceptionMessage.default.format(str(error)))
+    message = ExceptionMessage.messages.get(
+        code, ExceptionMessage.default.format(str(error))
     )
+    exception_cls = CodeStatusExceptions.exceptions.get(code, APIError)
+    if issubclass(exception_cls, APIError):
+        return exception_cls(status_code=code, message=message)
+    return exception_cls(message)
 
 
 def general_exception(error: Exception) -> Exception:
