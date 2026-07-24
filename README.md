@@ -127,7 +127,7 @@ First, let's see what languages we can work with.
 Simple and straightforward get your supported languages and print them:
 
 ```python
-supported_languages = djelia_client.translation.get_supported_languages()
+supported_languages = djelia_client.translations.list_languages()
 for lang in supported_languages:
     print(f"{lang.name}: {lang.code}")
 ```
@@ -141,7 +141,7 @@ import asyncio
 
 async def get_languages_test():
     async with djelia_async_client as client:
-        supported_languages = await client.translation.get_supported_languages()
+        supported_languages = await client.translations.list_languages()
         for lang in supported_languages:
             print(f"{lang.name}: {lang.code}")
 
@@ -152,14 +152,12 @@ asyncio.run(get_languages_test())
 
 Let's translate some text between beautiful 🇲🇱 languages and others. Feel free to try different language combinations!
 
-```python
-from djelia.models import TranslationRequest, Language, Versions
+With the OpenAI-style API you pass the fields straight to `.create()` — no need to build a request object:
 
-request = TranslationRequest(
-    text="Hello, how are you today?",
-    source=Language.ENGLISH,
-    target=Language.BAMBARA
-)
+```python
+from djelia.models import Language, Versions
+
+text = "Hello, how are you today?"
 ```
 
 ## <h3 style="color:#00FFFF;"> Synchronous
@@ -170,8 +168,13 @@ Create that translation and see what you get:
 from djelia.models import TranslationResponse
 
 try:
-    response_sync: TranslationResponse = djelia_client.translation.translate(request=request, version=Versions.v1)
-    print(f"Original: {request.text}")
+    response_sync: TranslationResponse = djelia_client.translations.create(
+        text=text,
+        source=Language.ENGLISH,
+        target=Language.BAMBARA,
+        model=Versions.v1,
+    )
+    print(f"Original: {text}")
     print(f"Translation: {response_sync.text}")
 except Exception as e:
     print(f"Translation error: {e}")
@@ -185,8 +188,13 @@ Async translation because why wait around? Let's do it bro !
 async def translate_async():
     async with djelia_async_client as client:
         try:
-            response_async: TranslationResponse = await client.translation.translate(request=request, version=Versions.v1)
-            print(f"Original: {request.text}")
+            response_async: TranslationResponse = await client.translations.create(
+                text=text,
+                source=Language.ENGLISH,
+                target=Language.BAMBARA,
+                model=Versions.v1,
+            )
+            print(f"Original: {text}")
             print(f"Translation: {response_async.text}")
             return response_async
         except Exception as e:
@@ -209,9 +217,9 @@ Let's transcribe some audio files. Make sure you have an audio file ready check 
 from djelia.models import Versions
 
 try:
-    transcription = djelia_client.transcription.transcribe(
-        audio_file=audio_file_path,
-        version=Versions.v2
+    transcription = djelia_client.audio.transcriptions.create(
+        file=audio_file_path,
+        model=Versions.v2
     )
     print(f"Transcribed {len(transcription)} segments:")
     for segment in transcription:
@@ -228,9 +236,9 @@ For the async enthusiasts: (like me, I ❤️ it)
 async def transcribe_async():
     async with djelia_async_client as client:
         try:
-            transcription = await client.transcription.transcribe(
-                audio_file=audio_file_path,
-                version=Versions.v2
+            transcription = await client.audio.transcriptions.create(
+                file=audio_file_path,
+                model=Versions.v2
             )
             print(f"Transcribed {len(transcription)} segments:")
             for segment in transcription:
@@ -252,10 +260,10 @@ print("Streaming transcription (showing first 3 segments)...")
 segment_count = 0
 
 try:
-    for segment in djelia_client.transcription.transcribe(
-        audio_file=audio_file_path,
+    for segment in djelia_client.audio.transcriptions.create(
+        file=audio_file_path,
         stream=True,
-        version=Versions.v2
+        model=Versions.v2
     ):
         segment_count += 1
         print(f"Segment {segment_count}: [{segment.start:.2f}s]: {segment.text}")
@@ -275,10 +283,10 @@ Async streaming because realtime is awesome: (bro, I'm telling you,  one second 
 async def stream_transcribe_async():
     async with djelia_async_client as client:
         try:
-            stream = await client.transcription.transcribe(
-                audio_file=audio_file_path,
+            stream = await client.audio.transcriptions.create(
+                file=audio_file_path,
                 stream=True,
-                version=Versions.v2
+                model=Versions.v2
             )
             segment_count = 0
             async for segment in stream:
@@ -302,10 +310,10 @@ Want to transcribe and translate to French in one go? We've got you covered!
 
 ```python
 try:
-    french_transcription = djelia_client.transcription.transcribe(
-        audio_file=audio_file_path,
+    french_transcription = djelia_client.audio.transcriptions.create(
+        file=audio_file_path,
         translate_to_french=True,
-        version=Versions.v2
+        model=Versions.v2
     )
     print(f"French translation: {french_transcription.text}")
 except Exception as e:
@@ -318,10 +326,10 @@ except Exception as e:
 async def transcribe_french_async():
     async with djelia_async_client as client:
         try:
-            french_transcription = await client.transcription.transcribe(
-                audio_file=audio_file_path,
+            french_transcription = await client.audio.transcriptions.create(
+                file=audio_file_path,
                 translate_to_french=True,
-                version=Versions.v2
+                model=Versions.v2
             )
             print(f"French translation: {french_transcription.text}")
         except Exception as e:
@@ -339,12 +347,7 @@ Let's make some beautiful voices! Choose between numbered speakers or describe e
 Classic approach with speaker IDs (0-4). Simple and effective!
 
 ```python
-from djelia.models import TTSRequest
-
-tts_request_v1 = TTSRequest(
-    text="Aw ni ce, i ka kɛnɛ wa?",  # "Hello, how are you?" in Bambara
-    speaker=1  # Choose from 0, 1, 2, 3, or 4
-)
+bambara_text = "Aw ni ce, i ka kɛnɛ wa?"  # "Hello, how are you?" in Bambara
 ```
 
 ## <h3 style="color:#00FFFF;"> Synchronous
@@ -353,10 +356,11 @@ Generate that audio and save it:
 
 ```python
 try:
-    audio_file_v1 = djelia_client.tts.text_to_speech(
-        request=tts_request_v1,
+    audio_file_v1 = djelia_client.audio.speech.create(
+        input=bambara_text,
+        voice=1,  # Choose from 0, 1, 2, 3, or 4
         output_file="hello_v1.wav",
-        version=Versions.v1
+        model=Versions.v1
     )
     print(f"Audio saved to: {audio_file_v1}")
 except Exception as e:
@@ -371,10 +375,11 @@ Async audio generation:
 async def generate_audio_v1_async():
     async with djelia_async_client as client:
         try:
-            audio_file_v1 = await client.tts.text_to_speech(
-                request=tts_request_v1,
+            audio_file_v1 = await client.audio.speech.create(
+                input=bambara_text,
+                voice=1,
                 output_file="hello_v1_async.wav",
-                version=Versions.v1
+                model=Versions.v1
             )
             print(f"Audio saved to: {audio_file_v1}")
         except Exception as e:
@@ -387,14 +392,10 @@ asyncio.run(generate_audio_v1_async())
 
 This is where it gets fun! Describe exactly how you want the voice to sound, but make sure to include one of the supported speakers: Moussa, Sekou, or Seydou.
 
-```python
-from djelia.models import TTSRequestV2
+For v2 you pass a natural-language `description` (which must name a supported speaker) instead of a numeric `voice`:
 
-tts_request_v2 = TTSRequestV2(
-    text="Aw ni ce, i ka kɛnɛ wa?",
-    description="Seydou speaks with a warm, welcoming tone",  # Must include Moussa, Sekou, or Seydou
-    chunk_size=1.0  # Control speech pacing (0.1 - 2.0)
-)
+```python
+v2_description = "Seydou speaks with a warm, welcoming tone"  # Must include Moussa, Sekou, or Seydou
 ```
 
 > <span style="color:red"> **Note:** </span> The description field must include one of the supported speakers. For example, "Moussa speaks with a warm tone" is valid, but "Natural tone" will raise an error. 
@@ -405,10 +406,12 @@ Create natural sounding speech:
 
 ```python
 try:
-    audio_file_v2 = djelia_client.tts.text_to_speech(
-        request=tts_request_v2,
+    audio_file_v2 = djelia_client.audio.speech.create(
+        input=bambara_text,
+        description=v2_description,
+        chunk_size=1.0,  # Control speech pacing (0.1 - 2.0)
         output_file="hello_v2.wav",
-        version=Versions.v2
+        model=Versions.v2
     )
     print(f"Natural audio saved to: {audio_file_v2}")
 except Exception as e:
@@ -423,10 +426,12 @@ Async natural speech generation:
 async def generate_natural_audio_async():
     async with djelia_async_client as client:
         try:
-            audio_file_v2 = await client.tts.text_to_speech(
-                request=tts_request_v2,
+            audio_file_v2 = await client.audio.speech.create(
+                input=bambara_text,
+                description=v2_description,
+                chunk_size=1.0,
                 output_file="hello_v2_async.wav",
-                version=Versions.v2
+                model=Versions.v2
             )
             print(f"Natural audio saved to: {audio_file_v2}")
         except Exception as e:
@@ -440,11 +445,8 @@ asyncio.run(generate_natural_audio_async())
 Realtime audio generation! Get chunks as they're created <span style="color:red">(v2 only)</span>.
 
 ```python
-streaming_tts_request = TTSRequestV2(
-    text="An filɛ ni ye yɔrɔ minna ni an ye an sigi ka a layɛ yala an bɛ ka baara min kɛ ɛsike a kɛlen don ka Ɲɛ wa, ...............", # a very long text 
-    description="Seydou speaks clearly and naturally",
-    chunk_size=1.0
-)
+long_text = "An filɛ ni ye yɔrɔ minna ni an ye an sigi ka a layɛ yala an bɛ ka baara min kɛ ɛsike a kɛlen don ka Ɲɛ wa, ..............."  # a very long text
+streaming_description = "Seydou speaks clearly and naturally"
 ```
 
 > <span style="color:red">**Note:**</span> By default, the SDK may process multiple chunks (e.g., up to 5 in some configurations). This example limits to 5 chunks for consistency, but you can adjust the limit based on your application needs.
@@ -460,11 +462,13 @@ total_bytes = 0
 max_chunks = 5
 
 try:
-    for chunk in djelia_client.tts.text_to_speech(
-        request=streaming_tts_request,
+    for chunk in djelia_client.audio.speech.create(
+        input=long_text,
+        description=streaming_description,
+        chunk_size=1.0,
         output_file="streamed_audio.wav",
         stream=True,
-        version=Versions.v2
+        model=Versions.v2
     ):
         chunk_count += 1
         total_bytes += len(chunk)
@@ -485,11 +489,13 @@ Async streaming TTS because realtime is the future (oops, actually it's today �
 async def stream_tts_async():
     async with djelia_async_client as client:
         try:
-            stream = await client.tts.text_to_speech(
-                request=streaming_tts_request,
+            stream = await client.audio.speech.create(
+                input=long_text,
+                description=streaming_description,
+                chunk_size=1.0,
                 output_file="streamed_audio_async.wav",
                 stream=True,
-                version=Versions.v2
+                model=Versions.v2
             )
             chunk_count = 0
             total_bytes = 0
@@ -521,9 +527,9 @@ print(f"Available versions: {[str(v) for v in Versions.all_versions()]}")
 
 # Use specific version
 try:
-    transcription = djelia_client.transcription.transcribe(
-        audio_file=audio_file_path,
-        version=Versions.v2
+    transcription = djelia_client.audio.transcriptions.create(
+        file=audio_file_path,
+        model=Versions.v2
     )
     print(f"Transcribed {len(transcription)} segments")
 except Exception as e:
@@ -536,24 +542,23 @@ Run multiple API operations concurrently using `asyncio.gather` with the async c
 
 ```python
 import asyncio
-from djelia.models import TranslationRequest, Language, TTSRequestV2, Versions
+from djelia.models import Language, Versions
 
 async def parallel_operations():
     async with DjeliaAsync(api_key=api_key) as client:
         try:
-            translation_request = TranslationRequest(
-                text="Hello", source=Language.ENGLISH, target=Language.BAMBARA
-            )
-            tts_request = TTSRequestV2(
-                text="Aw ni ce, i ka kɛnɛ wa?",
-                description="Moussa speaks with a clear tone",
-                chunk_size=1.0
-            )
-            
             results = await asyncio.gather(
-                client.translation.translate(translation_request, version=Versions.v1),
-                client.transcription.transcribe(audio_file_path, version=Versions.v2),
-                client.tts.text_to_speech(tts_request, output_file="parallel_tts.wav", version=Versions.v2),
+                client.translations.create(
+                    text="Hello", source=Language.ENGLISH, target=Language.BAMBARA, model=Versions.v1
+                ),
+                client.audio.transcriptions.create(file=audio_file_path, model=Versions.v2),
+                client.audio.speech.create(
+                    input="Aw ni ce, i ka kɛnɛ wa?",
+                    description="Moussa speaks with a clear tone",
+                    chunk_size=1.0,
+                    output_file="parallel_tts.wav",
+                    model=Versions.v2,
+                ),
                 return_exceptions=True
             )
             
@@ -576,7 +581,12 @@ The Djelia SDK provides specific exception classes to handle errors gracefully. 
 from djelia.utils.exceptions import AuthenticationError, APIError, ValidationError, LanguageError, SpeakerError
 
 try:
-    response = djelia_client.translation.translate(request=request, version=Versions.v1)
+    response = djelia_client.translations.create(
+        text="Hello, how are you today?",
+        source=Language.ENGLISH,
+        target=Language.BAMBARA,
+        model=Versions.v1,
+    )
     print(f"Translation: {response.text}")
 except AuthenticationError as e:
     print(f"Authentication error (check API key): {e}")
