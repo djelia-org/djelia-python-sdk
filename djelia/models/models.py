@@ -22,6 +22,40 @@ class Versions(int, Enum):
     def all_versions(cls):
         return list(cls)
 
+    @classmethod
+    def from_value(cls, value: "Versions | int | str") -> "Versions":
+        """Normalize a model/version identifier (enum, int, or str like "v2") to a Versions."""
+        if isinstance(value, cls):
+            return value
+        if isinstance(value, bool):
+            raise ValueError(
+                ErrorsMessage.invalid_version.format(
+                    value, [str(v) for v in cls]
+                )
+            )
+        if isinstance(value, int):
+            candidate = value
+        elif isinstance(value, str):
+            normalized = value.strip().lower().lstrip("v")
+            if not normalized.isdigit():
+                raise ValueError(
+                    ErrorsMessage.invalid_version.format(
+                        value, [str(v) for v in cls]
+                    )
+                )
+            candidate = int(normalized)
+        else:
+            raise ValueError(
+                ErrorsMessage.invalid_version.format(value, [str(v) for v in cls])
+            )
+
+        try:
+            return cls(candidate)
+        except ValueError:
+            raise ValueError(
+                ErrorsMessage.invalid_version.format(value, [str(v) for v in cls])
+            )
+
     def __str__(self):
         return f"v{self.value}"
 
@@ -113,4 +147,8 @@ class ErrorsMessage:
     )
     tts_v1_request_error: str = "TTSRequest required for V1"
     tts_v2_request_error: str = "TTSRequestV2 required for V2"
+    tts_v2_description_required: str = (
+        "A 'description' naming a supported speaker is required for TTS V2"
+    )
     tts_streaming_compatibility: str = "Streaming is only available for TTS V2"
+    invalid_version: str = "Invalid model/version {!r}, expected one of {}"
