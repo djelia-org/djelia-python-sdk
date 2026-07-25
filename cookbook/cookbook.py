@@ -1,678 +1,473 @@
+from __future__ import annotations
+
 import asyncio
-import logging
 import os
-import traceback
+from pathlib import Path
+from typing import Dict, List, Optional
 from uuid import uuid4
 
 from djelia import Djelia, DjeliaAsync
-from djelia.models import (Language, SupportedLanguageSchema,
-                           TranslationResponse, Versions)
+from djelia.models import Language, Versions
 
 from .config import Config
-from .utils import (ConsoleColor, handle_transcription_result, print_error,
-                    print_info, print_success, print_summary, process_result)
+from .utils import Reporter
 
 # ================================================
-#                  Djelia Cookbook
+#                  Test registry
 # ================================================
 
+GROUP_ORDER: List[str] = [
+    "translation",
+    "transcription",
+    "stream-transcription",
+    "tts",
+    "stream-tts",
+    "version",
+    "parallel",
+]
 
-class DjeliaCookbook:
-    def __init__(self, config: Config):
+GROUPS: Dict[str, Dict[str, Optional[str]]] = {
+    "translation": {
+        "label": "Translation",
+        "sync": "translation_sync",
+        "async": "translation_async",
+    },
+    "transcription": {
+        "label": "Transcription",
+        "sync": "transcription_sync",
+        "async": "transcription_async",
+    },
+    "stream-transcription": {
+        "label": "Streaming transcription",
+        "sync": "streaming_transcription_sync",
+        "async": "streaming_transcription_async",
+    },
+    "tts": {
+        "label": "Text-to-speech",
+        "sync": "tts_sync",
+        "async": "tts_async",
+    },
+    "stream-tts": {
+        "label": "Streaming TTS",
+        "sync": "streaming_tts_sync",
+        "async": "streaming_tts_async",
+    },
+    "version": {
+        "label": "Version management",
+        "sync": "version_management",
+        "async": None,
+    },
+    "parallel": {
+        "label": "Parallel operations",
+        "sync": None,
+        "async": "parallel_operations",
+    },
+}
+
+
+def _short(text: str, limit: int = 32) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+def _transcription_detail(transcription) -> str:
+    if isinstance(transcription, list):
+        if transcription:
+            return f"{len(transcription)} segments · '{_short(transcription[0].text)}'"
+        return "0 segments"
+    if hasattr(transcription, "text"):
+        return f"'{_short(transcription.text)}'"
+    return "unexpected format"
+
+
+def _filesize(path: str) -> str:
+    try:
+        return f"{os.path.getsize(path):,} bytes"
+    except OSError:
+        return "written"
+
+
+class DjeliaTestSuite:
+    """Exercises the OpenAI-style Djelia SDK surface and reports live metrics."""
+
+    def __init__(self, config: Config, reporter: Reporter):
         self.config = config
+        self.reporter = reporter
         self.sync_client = Djelia(api_key=config.api_key)
         self.async_client = DjeliaAsync(api_key=config.api_key)
-        self.test_results = {}
 
-        self.translation_samples = [
+        self.output_dir = Path(config.output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self._generated: List[Path] = []
+
+        self.samples = [
             ("Hello, how are you?", Language.ENGLISH, Language.BAMBARA),
             ("Bonjour, comment allez-vous?", Language.FRENCH, Language.BAMBARA),
             ("Good morning", Language.ENGLISH, Language.FRENCH),
         ]
-        self.bambara_tts_text = "Aw ni ce, i ka kɛnɛ wa?"
-        self.supported_speakers = ["Moussa", "Sekou", "Seydou"]
+        self.tts_text = config.tts_text
+        self.speakers = config.speakers
 
-    # ------------------------------
-    # Setup Validation
-    # ------------------------------
+    # ---------
+    # Helpers #
+    # --------
+    def _out(self, name: str) -> str:
+        path = self.output_dir / name
+        self._generated.append(path)
+        return str(path)
 
-    def validate_setup(self) -> bool:
-        valid = True
-
-        if not self.config.api_key:
-            print_error("DJELIA_API_KEY not found")
-            valid = False
-
-        if not os.path.exists(self.config.audio_file_path):
-            print_error(f"Audio file not found: {self.config.audio_file_path}")
-            valid = False
-
-        if valid:
-            print_success("API Key and audio file loaded")
-
-        return valid
-
-    # ------------------------------
-    # Translation Tests
-    # ------------------------------
-
-    def test_translation_sync(self) -> None:
-        test_name = "Sync Translation"
-        print(
-            f"{ConsoleColor.CYAN}\n{'SYNCHRONOUS TRANSLATION':^60}{ConsoleColor.RESET}"
-        )
-
-        try:
-            languages: list[SupportedLanguageSchema] = (
-                self.sync_client.translations.list_languages()
-            )
-            print_success(f"Supported languages: {len(languages)}")
-
-            for text, source, target in self.translation_samples:
-                response: TranslationResponse = self.sync_client.translations.create(
-                    text=text, source=source, target=target, model=Versions.v1
+    def cleanup(self) -> None:
+        if self.config.keep_audio:
+            if self._generated:
+                self.reporter.info(
+                    f"kept {len(self._generated)} audio file(s) in {self.output_dir}/"
                 )
-                print_success(
-                    f"{source.value} → {target.value}: "
-                    f"'{text}' → '{ConsoleColor.YELLOW}{response.text}{ConsoleColor.RESET}'"
-                )
-
-            self.test_results[test_name] = (
-                "Success",
-                f"{len(self.translation_samples)} translations",
-            )
-
-        except Exception as e:
-            print_error(f"Translation error: {e}")
-            self.test_results[test_name] = ("Failed", str(e))
-            logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    async def test_translation_async(self) -> None:
-        test_name = "Async Translation"
-        print(
-            f"{ConsoleColor.PURPLE}\n{'ASYNCHRONOUS TRANSLATION':^60}{ConsoleColor.RESET}"
-        )
-
-        async with self.async_client as client:
+            return
+        removed = 0
+        for path in self._generated:
             try:
-                languages = await client.translations.list_languages()
-                print_success(f"Supported languages (async): {len(languages)}")
+                path.unlink()
+                removed += 1
+            except OSError:
+                pass
+        try:
+            self.output_dir.rmdir()
+        except OSError:
+            pass
+        if removed:
+            self.reporter.info(f"cleaned up {removed} generated audio file(s)")
 
-                for text, source, target in self.translation_samples:
-                    response = await client.translations.create(
+    def validate(self) -> bool:
+        ok = True
+        if not self.config.api_key:
+            self.reporter.fail("DJELIA_API_KEY is not set")
+            ok = False
+        if not os.path.exists(self.config.audio_file_path):
+            self.reporter.fail(f"audio file not found: {self.config.audio_file_path}")
+            ok = False
+        if ok:
+            self.reporter.ok("API key and audio file present")
+        return ok
+
+    # --------------
+    # Translation #
+    # -------------
+    def translation_sync(self) -> None:
+        with self.reporter.case("Translation · sync", "translation") as case:
+            with case.op("languages", "supported-languages") as op:
+                languages = self.sync_client.translations.list_languages()
+                op.set(f"{len(languages)} languages")
+            for text, source, target in self.samples:
+                with case.op("translate", f"{source.value}→{target.value}") as op:
+                    response = self.sync_client.translations.create(
                         text=text, source=source, target=target, model=Versions.v1
                     )
-                    print_success(
-                        f"{source.value} → {target.value} (async): "
-                        f"'{text}' → '{ConsoleColor.YELLOW}{response.text}{ConsoleColor.RESET}'"
-                    )
+                    op.set(f"'{_short(text)}' → '{_short(response.text)}'")
+            case.done(f"{len(self.samples)} translations · {len(languages)} languages")
 
-                self.test_results[test_name] = (
-                    "Success",
-                    f"{len(self.translation_samples)} translations",
-                )
+    async def translation_async(self) -> None:
+        with self.reporter.case("Translation · async", "translation") as case:
+            async with self.async_client as client:
+                with case.op("languages", "supported-languages") as op:
+                    languages = await client.translations.list_languages()
+                    op.set(f"{len(languages)} languages")
+                for text, source, target in self.samples:
+                    with case.op("translate", f"{source.value}→{target.value}") as op:
+                        response = await client.translations.create(
+                            text=text, source=source, target=target, model=Versions.v1
+                        )
+                        op.set(f"'{_short(text)}' → '{_short(response.text)}'")
+            case.done(f"{len(self.samples)} translations · {len(languages)} languages")
 
-            except Exception as e:
-                print_error(f"Async translation error: {e}")
-                self.test_results[test_name] = ("Failed", str(e))
-                logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    # ------------------------------
-    # Transcription Tests
-    # ------------------------------
-
-    def test_transcription_sync(self) -> None:
-        test_name = "Sync Transcription"
-        print(
-            f"{ConsoleColor.CYAN}\n{'SYNCHRONOUS TRANSCRIPTION':^60}{ConsoleColor.RESET}"
-        )
-
-        if not os.path.exists(self.config.audio_file_path):
-            print_error("Audio file missing")
-            self.test_results[test_name] = ("Failed", "Missing audio file")
-            return
-
-        for version in [Versions.v1, Versions.v2]:
-            try:
-                print_info(f"Testing non-streaming v{version.value}")
-                transcription = self.sync_client.audio.transcriptions.create(
-                    file=self.config.audio_file_path, model=version
-                )
-                handle_transcription_result(transcription, f"v{version.value}")
-
-                if version == Versions.v2:
-                    print_info("Testing French translation")
-                    transcription_fr = self.sync_client.audio.transcriptions.create(
-                        file=self.config.audio_file_path,
-                        translate_to_french=True,
-                        model=version,
-                    )
-                    print_success(
-                        f"French translation (v{version.value}): "
-                        f"'{ConsoleColor.YELLOW}{transcription_fr.text}{ConsoleColor.RESET}'"
-                    )
-
-                self.test_results[test_name] = (
-                    "Success",
-                    f"v{version.value} completed",
-                )
-
-            except Exception as e:
-                print_error(f"Transcription error (v{version.value}): {e}")
-                self.test_results[test_name] = ("Failed", str(e))
-                logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    async def test_transcription_async(self) -> None:
-        test_name = "Async Transcription"
-        print(
-            f"{ConsoleColor.PURPLE}\n{'ASYNCHRONOUS TRANSCRIPTION':^60}{ConsoleColor.RESET}"
-        )
-
-        if not os.path.exists(self.config.audio_file_path):
-            print_error("Audio file missing")
-            self.test_results[test_name] = ("Failed", "Missing audio file")
-            return
-
-        async with self.async_client as client:
-            for version in [Versions.v1, Versions.v2]:
-                try:
-                    print_info(f"Testing non-streaming v{version.value}")
-                    transcription = await client.audio.transcriptions.create(
+    # --------------
+    # Transcription #
+    # --------------
+    def transcription_sync(self) -> None:
+        with self.reporter.case("Transcription · sync", "transcription") as case:
+            for version in (Versions.v1, Versions.v2):
+                with case.op("transcribe", f"v{version.value}") as op:
+                    transcription = self.sync_client.audio.transcriptions.create(
                         file=self.config.audio_file_path, model=version
                     )
-                    handle_transcription_result(
-                        transcription, f"v{version.value} (async)"
-                    )
-
-                    if version == Versions.v2:
-                        print_info("Testing French translation")
-                        transcription_fr = await client.audio.transcriptions.create(
-                            file=self.config.audio_file_path,
-                            translate_to_french=True,
-                            model=version,
-                        )
-                        print_success(
-                            f"French translation (async): "
-                            f"'{ConsoleColor.YELLOW}{transcription_fr.text}{ConsoleColor.RESET}'"
-                        )
-
-                    self.test_results[test_name] = (
-                        "Success",
-                        f"v{version.value} completed",
-                    )
-
-                except Exception as e:
-                    print_error(f"Async transcription error (v{version.value}): {e}")
-                    self.test_results[test_name] = ("Failed", str(e))
-                    logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    # ------------------------------
-    # Streaming Transcription
-    # ------------------------------
-
-    def test_streaming_transcription_sync(self) -> None:
-        test_name = "Sync Streaming Transcription"
-        print(
-            f"{ConsoleColor.CYAN}\n{'SYNCHRONOUS STREAMING TRANSCRIPTION':^60}{ConsoleColor.RESET}"
-        )
-
-        if not os.path.exists(self.config.audio_file_path):
-            print_error("Audio file missing")
-            self.test_results[test_name] = ("Failed", "Missing audio file")
-            return
-
-        for version in [Versions.v1, Versions.v2]:
-            try:
-                print_info(f"Testing streaming v{version.value}")
-                segment_count = 0
-
-                for segment in self.sync_client.audio.transcriptions.create(
-                    file=self.config.audio_file_path, stream=True, model=version
-                ):
-                    segment_count += 1
-                    print_success(
-                        f"Segment {segment_count}: "
-                        f"{segment.start:.2f}s-{segment.end:.2f}s: "
-                        f"'{ConsoleColor.YELLOW}{segment.text}{ConsoleColor.RESET}'"
-                    )
-
-                    if segment_count >= self.config.max_stream_segments:
-                        print_info(
-                            f"Showing first {self.config.max_stream_segments} segments"
-                        )
-                        break
-
-                print_success(f"Streaming complete: {segment_count} segments")
-
+                    op.set(_transcription_detail(transcription))
                 if version == Versions.v2:
-                    print_info("Testing streaming French translation")
-                    segment_count = 0
-
-                    for segment in self.sync_client.audio.transcriptions.create(
-                        file=self.config.audio_file_path,
-                        stream=True,
-                        translate_to_french=True,
-                        model=version,
-                    ):
-                        segment_count += 1
-                        text = segment.text
-                        print_success(
-                            f"French Segment {segment_count}: "
-                            f"'{ConsoleColor.YELLOW}{text}{ConsoleColor.RESET}'"
-                        )
-
-                        if segment_count >= self.config.max_stream_segments:
-                            print_info(
-                                f"Showing first {self.config.max_stream_segments} segments"
-                            )
-                            break
-
-                    print_success(
-                        f"French streaming complete: {segment_count} segments"
-                    )
-
-                self.test_results[test_name] = (
-                    "Success",
-                    f"v{version.value} completed",
-                )
-
-            except Exception as e:
-                print_error(f"Streaming error (v{version.value}): {e}")
-                self.test_results[test_name] = ("Failed", str(e))
-                logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    async def test_streaming_transcription_async(self) -> None:
-        test_name = "Async Streaming Transcription"
-        print(
-            f"{ConsoleColor.PURPLE}\n{'ASYNCHRONOUS STREAMING TRANSCRIPTION':^60}{ConsoleColor.RESET}"
-        )
-
-        if not os.path.exists(self.config.audio_file_path):
-            print_error("Audio file missing")
-            self.test_results[test_name] = ("Failed", "Missing audio file")
-            return
-
-        async with self.async_client as client:
-            for version in [Versions.v1, Versions.v2]:
-                try:
-                    print_info(f"Testing streaming v{version.value}")
-                    segment_count = 0
-
-                    generator = await client.audio.transcriptions.create(
-                        file=self.config.audio_file_path, stream=True, model=version
-                    )
-
-                    async for segment in generator:
-                        segment_count += 1
-                        print_success(
-                            f"Segment {segment_count}: "
-                            f"{segment.start:.2f}s-{segment.end:.2f}s: "
-                            f"'{ConsoleColor.YELLOW}{segment.text}{ConsoleColor.RESET}'"
-                        )
-
-                        if segment_count >= self.config.max_stream_segments:
-                            print_info(
-                                f"Showing first {self.config.max_stream_segments} segments"
-                            )
-                            break
-
-                    print_success(f"Streaming complete: {segment_count} segments")
-
-                    if version == Versions.v2:
-                        print_info("Testing streaming French translation")
-                        segment_count = 0
-
-                        generator = await client.audio.transcriptions.create(
+                    with case.op("transcribe", "v2 → french") as op:
+                        fr = self.sync_client.audio.transcriptions.create(
                             file=self.config.audio_file_path,
-                            stream=True,
                             translate_to_french=True,
                             model=version,
                         )
+                        op.set(f"'{_short(fr.text)}'")
+            case.done("v1 + v2 (with french)")
 
-                        async for segment in generator:
-                            segment_count += 1
-                            text = segment.text
-                            print_success(
-                                f"French Segment {segment_count}: "
-                                f"'{ConsoleColor.YELLOW}{text}{ConsoleColor.RESET}'"
-                            )
-
-                            if segment_count >= self.config.max_stream_segments:
-                                print_info(
-                                    f"Showing first {self.config.max_stream_segments} segments"
-                                )
-                                break
-
-                        print_success(
-                            f"French streaming complete: {segment_count} segments"
+    async def transcription_async(self) -> None:
+        with self.reporter.case("Transcription · async", "transcription") as case:
+            async with self.async_client as client:
+                for version in (Versions.v1, Versions.v2):
+                    with case.op("transcribe", f"v{version.value}") as op:
+                        transcription = await client.audio.transcriptions.create(
+                            file=self.config.audio_file_path, model=version
                         )
+                        op.set(_transcription_detail(transcription))
+                    if version == Versions.v2:
+                        with case.op("transcribe", "v2 → french") as op:
+                            fr = await client.audio.transcriptions.create(
+                                file=self.config.audio_file_path,
+                                translate_to_french=True,
+                                model=version,
+                            )
+                            op.set(f"'{_short(fr.text)}'")
+            case.done("v1 + v2 (with french)")
 
-                    self.test_results[test_name] = (
-                        "Success",
-                        f"v{version.value} completed",
-                    )
+    # -----------------------
+    # Streaming transcription #
+    # -----------------------
+    def streaming_transcription_sync(self) -> None:
+        with self.reporter.case(
+            "Streaming transcription · sync", "stream-transcription"
+        ) as case:
+            limit = self.config.max_stream_segments
+            for version in (Versions.v1, Versions.v2):
+                with case.op("stream", f"transcribe v{version.value}") as op:
+                    count = 0
+                    for segment in self.sync_client.audio.transcriptions.create(
+                        file=self.config.audio_file_path, stream=True, model=version
+                    ):
+                        count += 1
+                        case.note(
+                            f"seg {count} {segment.start:.2f}-{segment.end:.2f}s: "
+                            f"{_short(segment.text)}"
+                        )
+                        if count >= limit:
+                            break
+                    op.set(f"{count} segments (first {limit})")
+            case.done("v1 + v2 streamed")
 
-                except Exception as e:
-                    print_error(f"Async streaming error (v{version.value}): {e}")
-                    self.test_results[test_name] = ("Failed", str(e))
-                    logging.error(f"Traceback:\n{traceback.format_exc()}")
+    async def streaming_transcription_async(self) -> None:
+        with self.reporter.case(
+            "Streaming transcription · async", "stream-transcription"
+        ) as case:
+            limit = self.config.max_stream_segments
+            async with self.async_client as client:
+                for version in (Versions.v1, Versions.v2):
+                    with case.op("stream", f"transcribe v{version.value}") as op:
+                        count = 0
+                        generator = await client.audio.transcriptions.create(
+                            file=self.config.audio_file_path, stream=True, model=version
+                        )
+                        async for segment in generator:
+                            count += 1
+                            case.note(
+                                f"seg {count} {segment.start:.2f}-{segment.end:.2f}s: "
+                                f"{_short(segment.text)}"
+                            )
+                            if count >= limit:
+                                break
+                        op.set(f"{count} segments (first {limit})")
+            case.done("v1 + v2 streamed")
 
-    # ------------------------------
-    # TTS Tests
-    # ------------------------------
-
-    def test_tts_sync(self) -> None:
-        test_name = "Sync TTS"
-        print(
-            f"{ConsoleColor.CYAN}\n{'SYNCHRONOUS TEXT-TO-SPEECH':^60}{ConsoleColor.RESET}"
-        )
-
-        try:
-            audio_file_v1 = self.sync_client.audio.speech.create(
-                input=self.bambara_tts_text,
-                voice=1,
-                output_file=f"tts_sync_v1_{uuid4().hex}.wav",
-                model=Versions.v1,
-            )
-            print_success(
-                f"TTS v1 saved: {ConsoleColor.BLUE}{audio_file_v1}{ConsoleColor.RESET}"
-            )
-
-            for speaker in self.supported_speakers:
-                audio_file_v2 = self.sync_client.audio.speech.create(
-                    input=self.bambara_tts_text,
-                    description=f"{speaker} speaks with natural tone",
-                    chunk_size=1.0,
-                    output_file=f"tts_sync_v2_{speaker}_{uuid4().hex}.wav",
-                    model=Versions.v2,
-                )
-                print_success(
-                    f"TTS v2 ({speaker}): {ConsoleColor.BLUE}{audio_file_v2}{ConsoleColor.RESET}"
-                )
-
-            self.test_results[test_name] = (
-                "Success",
-                f"{len(self.supported_speakers)} speakers",
-            )
-
-        except Exception as e:
-            print_error(f"TTS error: {e}")
-            self.test_results[test_name] = ("Failed", str(e))
-            logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    async def test_tts_async(self) -> None:
-        test_name = "Async TTS"
-        print(
-            f"{ConsoleColor.PURPLE}\n{'ASYNCHRONOUS TEXT-TO-SPEECH':^60}{ConsoleColor.RESET}"
-        )
-
-        async with self.async_client as client:
-            try:
-                audio_file_v1 = await client.audio.speech.create(
-                    input=self.bambara_tts_text,
+    # ---------------
+    # Text-to-speech #
+    # ---------------
+    def tts_sync(self) -> None:
+        with self.reporter.case("Text-to-speech · sync", "tts") as case:
+            with case.op("tts", "v1") as op:
+                path = self.sync_client.audio.speech.create(
+                    input=self.tts_text,
                     voice=1,
-                    output_file=f"tts_async_v1_{uuid4().hex}.wav",
+                    output_file=self._out(f"tts_sync_v1_{uuid4().hex}.wav"),
                     model=Versions.v1,
                 )
-                print_success(
-                    f"TTS v1 saved: {ConsoleColor.BLUE}{audio_file_v1}{ConsoleColor.RESET}"
-                )
-
-                for speaker in self.supported_speakers:
-                    audio_file_v2 = await client.audio.speech.create(
-                        input=self.bambara_tts_text,
+                op.set(_filesize(path))
+            for speaker in self.speakers:
+                with case.op("tts", f"v2 {speaker}") as op:
+                    path = self.sync_client.audio.speech.create(
+                        input=self.tts_text,
                         description=f"{speaker} speaks with natural tone",
-                        chunk_size=0.5,
-                        output_file=f"tts_async_v2_{speaker}_{uuid4().hex}.wav",
+                        output_file=self._out(
+                            f"tts_sync_v2_{speaker}_{uuid4().hex}.wav"
+                        ),
                         model=Versions.v2,
                     )
-                    print_success(
-                        f"TTS v2 ({speaker}): {ConsoleColor.BLUE}{audio_file_v2}{ConsoleColor.RESET}"
+                    op.set(_filesize(path))
+            case.done(f"v1 + {len(self.speakers)} v2 speakers")
+
+    async def tts_async(self) -> None:
+        with self.reporter.case("Text-to-speech · async", "tts") as case:
+            async with self.async_client as client:
+                with case.op("tts", "v1") as op:
+                    path = await client.audio.speech.create(
+                        input=self.tts_text,
+                        voice=1,
+                        output_file=self._out(f"tts_async_v1_{uuid4().hex}.wav"),
+                        model=Versions.v1,
                     )
+                    op.set(_filesize(path))
+                for speaker in self.speakers:
+                    with case.op("tts", f"v2 {speaker}") as op:
+                        path = await client.audio.speech.create(
+                            input=self.tts_text,
+                            description=f"{speaker} speaks with natural tone",
+                            output_file=self._out(
+                                f"tts_async_v2_{speaker}_{uuid4().hex}.wav"
+                            ),
+                            model=Versions.v2,
+                        )
+                        op.set(_filesize(path))
+            case.done(f"v1 + {len(self.speakers)} v2 speakers")
 
-                self.test_results[test_name] = (
-                    "Success",
-                    f"{len(self.supported_speakers)} speakers",
-                )
-
-            except Exception as e:
-                print_error(f"Async TTS error: {e}")
-                self.test_results[test_name] = ("Failed", str(e))
-                logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    # ------------------------------
-    # Streaming TTS
-    # ------------------------------
-
-    def test_streaming_tts_sync(self) -> None:
-        test_name = "Sync Streaming TTS"
-        print(
-            f"{ConsoleColor.CYAN}\n{'SYNCHRONOUS STREAMING TTS':^60}{ConsoleColor.RESET}"
-        )
-
-        try:
-            chunk_count = 0
-            total_bytes = 0
-
-            for audio_chunk in self.sync_client.audio.speech.create(
-                input=self.bambara_tts_text,
-                description=f"{self.supported_speakers[0]} speaks with natural conversational tone",
-                output_file=f"stream_tts_sync_{uuid4().hex}.wav",
-                stream=True,
-                model=Versions.v2,
-            ):
-                chunk_count += 1
-                total_bytes += len(audio_chunk)
-                print_success(f"Chunk {chunk_count}: {len(audio_chunk):,} bytes")
-
-                if chunk_count >= self.config.max_stream_chunks:
-                    print_info(f"Showing first {self.config.max_stream_chunks} chunks")
-                    break
-
-            print_success(
-                f"Streaming complete: {chunk_count} chunks, "
-                f"{ConsoleColor.BLUE}{total_bytes:,} bytes{ConsoleColor.RESET}"
-            )
-            self.test_results[test_name] = ("Success", f"{chunk_count} chunks")
-
-        except Exception as e:
-            print_error(f"Streaming TTS error: {e}")
-            self.test_results[test_name] = ("Failed", str(e))
-            logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    async def test_streaming_tts_async(self) -> None:
-        test_name = "Async Streaming TTS"
-        print(
-            f"{ConsoleColor.PURPLE}\n{'ASYNCHRONOUS STREAMING TTS':^60}{ConsoleColor.RESET}"
-        )
-
-        async with self.async_client as client:
-            try:
-                chunk_count = 0
-                total_bytes = 0
-
-                generator = await client.audio.speech.create(
-                    input=self.bambara_tts_text,
-                    description=f"{self.supported_speakers[0]} speaks with clear natural tone",
-                    output_file=f"stream_tts_async_{uuid4().hex}.wav",
+    # --------------------------
+    # Streaming text-to-speech #
+    # --------------------------
+    def streaming_tts_sync(self) -> None:
+        with self.reporter.case("Streaming TTS · sync", "stream-tts") as case:
+            limit = self.config.max_stream_chunks
+            with case.op("stream", "tts v2") as op:
+                chunks = 0
+                total = 0
+                for chunk in self.sync_client.audio.speech.create(
+                    input=self.tts_text,
+                    description=f"{self.speakers[0]} speaks with natural conversational tone",
+                    output_file=self._out(f"stream_tts_sync_{uuid4().hex}.wav"),
                     stream=True,
                     model=Versions.v2,
-                )
-
-                async for audio_chunk in generator:
-                    chunk_count += 1
-                    total_bytes += len(audio_chunk)
-                    print_success(f"Chunk {chunk_count}: {len(audio_chunk):,} bytes")
-
-                    if chunk_count >= self.config.max_stream_chunks:
-                        print_info(
-                            f"Showing first {self.config.max_stream_chunks} chunks"
-                        )
+                ):
+                    chunks += 1
+                    total += len(chunk)
+                    case.note(f"chunk {chunks}: {len(chunk):,} bytes")
+                    if chunks >= limit:
                         break
+                op.set(f"{chunks} chunks · {total:,} bytes")
+            case.done(f"{chunks} chunks streamed")
 
-                print_success(
-                    f"Streaming complete: {chunk_count} chunks, "
-                    f"{ConsoleColor.BLUE}{total_bytes:,} bytes{ConsoleColor.RESET}"
-                )
-                self.test_results[test_name] = ("Success", f"{chunk_count} chunks")
-
-            except Exception as e:
-                print_error(f"Async streaming TTS error: {e}")
-                self.test_results[test_name] = ("Failed", str(e))
-                logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    # ------------------------------
-    # Advanced Features
-    # ------------------------------
-
-    async def test_parallel_operations(self) -> None:
-        test_name = "Parallel Operations"
-        print(
-            f"{ConsoleColor.CYAN}\n{'PARALLEL API OPERATIONS':^60}{ConsoleColor.RESET}"
-        )
-
-        async with self.async_client as client:
-            try:
-                print_info("Executing parallel operations...")
-
-                results = await asyncio.gather(
-                    client.translations.list_languages(),
-                    client.translations.create(
-                        text="Hello",
-                        source=Language.ENGLISH,
-                        target=Language.BAMBARA,
-                        model=Versions.v1,
-                    ),
-                    client.audio.transcriptions.create(
-                        file=self.config.audio_file_path, model=Versions.v1
-                    ),
-                    client.audio.speech.create(
-                        input=self.bambara_tts_text,
-                        description=f"{self.supported_speakers[0]} speaks with clear speaking tone",
-                        output_file=f"parallel_tts_{uuid4().hex}.wav",
+    async def streaming_tts_async(self) -> None:
+        with self.reporter.case("Streaming TTS · async", "stream-tts") as case:
+            limit = self.config.max_stream_chunks
+            async with self.async_client as client:
+                with case.op("stream", "tts v2") as op:
+                    chunks = 0
+                    total = 0
+                    generator = await client.audio.speech.create(
+                        input=self.tts_text,
+                        description=f"{self.speakers[0]} speaks with clear natural tone",
+                        output_file=self._out(f"stream_tts_async_{uuid4().hex}.wav"),
+                        stream=True,
                         model=Versions.v2,
-                    ),
-                    return_exceptions=True,
-                )
-
-                print(f"\n{ConsoleColor.CYAN}Parallel Results:{ConsoleColor.RESET}")
-                process_result("Languages", results[0])
-                process_result("Translation", results[1])
-                process_result("Transcription", results[2])
-                process_result("TTS Output", results[3])
-
-                if all(not isinstance(r, Exception) for r in results):
-                    self.test_results[test_name] = (
-                        "Success",
-                        "All operations completed",
                     )
+                    async for chunk in generator:
+                        chunks += 1
+                        total += len(chunk)
+                        case.note(f"chunk {chunks}: {len(chunk):,} bytes")
+                        if chunks >= limit:
+                            break
+                    op.set(f"{chunks} chunks · {total:,} bytes")
+            case.done(f"{chunks} chunks streamed")
+
+    # --------------------
+    # Version management #
+    # -------------------
+    def version_management(self) -> None:
+        with self.reporter.case("Version management · sync", "version") as case:
+            self.reporter.info(f"latest version: {Versions.latest()}")
+            self.reporter.info(
+                f"available: {[str(v) for v in Versions.all_versions()]}"
+            )
+            with case.op("translate", "v1") as op:
+                result = self.sync_client.translations.create(
+                    text="Hello world",
+                    source=Language.ENGLISH,
+                    target=Language.BAMBARA,
+                    model=Versions.v1,
+                )
+                op.set(f"'{_short(result.text)}'")
+            for version in (Versions.v1, Versions.v2):
+                with case.op("transcribe", f"v{version.value}") as op:
+                    transcription = self.sync_client.audio.transcriptions.create(
+                        file=self.config.audio_file_path, model=version
+                    )
+                    op.set(_transcription_detail(transcription))
+            with case.op("tts", "v1") as op:
+                path = self.sync_client.audio.speech.create(
+                    input=self.tts_text,
+                    voice=1,
+                    output_file=self._out(f"tts_v1_{uuid4().hex}.wav"),
+                    model=Versions.v1,
+                )
+                op.set(_filesize(path))
+            with case.op("tts", "v2") as op:
+                path = self.sync_client.audio.speech.create(
+                    input=self.tts_text,
+                    description=f"{self.speakers[0]} speaks with natural tone",
+                    output_file=self._out(f"tts_v2_{uuid4().hex}.wav"),
+                    model=Versions.v2,
+                )
+                op.set(_filesize(path))
+            case.done("v1/v2 across translate, transcribe, tts")
+
+    # ---------------------
+    # Parallel operations #
+    # ---------------------
+    async def parallel_operations(self) -> None:
+        with self.reporter.case("Parallel operations · async", "parallel") as case:
+            async with self.async_client as client:
+                with case.op("gather", "4 concurrent ops") as op:
+                    results = await asyncio.gather(
+                        client.translations.list_languages(),
+                        client.translations.create(
+                            text="Hello",
+                            source=Language.ENGLISH,
+                            target=Language.BAMBARA,
+                            model=Versions.v1,
+                        ),
+                        client.audio.transcriptions.create(
+                            file=self.config.audio_file_path, model=Versions.v1
+                        ),
+                        client.audio.speech.create(
+                            input=self.tts_text,
+                            description=f"{self.speakers[0]} speaks with clear speaking tone",
+                            output_file=self._out(f"parallel_tts_{uuid4().hex}.wav"),
+                            model=Versions.v2,
+                        ),
+                        return_exceptions=True,
+                    )
+                    succeeded = sum(
+                        1 for r in results if not isinstance(r, Exception)
+                    )
+                    op.set(f"{succeeded}/{len(results)} succeeded")
+
+            names = ["languages", "translation", "transcription", "tts"]
+            failed = []
+            for name, result in zip(names, results):
+                if isinstance(result, Exception):
+                    case.note(f"[red]{name}: {result}[/]")
+                    failed.append(name)
                 else:
-                    failed = [
-                        type(r).__name__ for r in results if isinstance(r, Exception)
-                    ]
-                    self.test_results[test_name] = (
-                        "Failed",
-                        f"Errors: {', '.join(failed)}",
-                    )
+                    case.note(f"{name}: {type(result).__name__}")
+            if failed:
+                raise RuntimeError(f"failed: {', '.join(failed)}")
+            case.done("4 concurrent operations")
 
-            except Exception as e:
-                print_error(f"Parallel operations error: {e}")
-                self.test_results[test_name] = ("Failed", str(e))
-                logging.error(f"Traceback:\n{traceback.format_exc()}")
+    # ---------------
+    # Orchestration #
+    # ---------------
+    def run(self, groups: List[str], mode: str) -> None:
+        selected = [g for g in GROUP_ORDER if g in groups]
 
-    def test_version_management(self) -> None:
-        test_name = "Version Management"
-        print(f"{ConsoleColor.CYAN}\n{'VERSION MANAGEMENT':^60}{ConsoleColor.RESET}")
+        for key in selected:
+            method = GROUPS[key]["sync"]
+            if mode in ("sync", "both") and method:
+                getattr(self, method)()
 
-        print_success(
-            f"Latest version: {ConsoleColor.YELLOW}{Versions.latest()}{ConsoleColor.RESET}"
-        )
-        print_success(
-            f"Available versions: {ConsoleColor.GRAY}{[str(v) for v in Versions.all_versions()]}"
-        )
+        async_methods = [
+            GROUPS[key]["async"]
+            for key in selected
+            if mode in ("async", "both") and GROUPS[key]["async"]
+        ]
+        if async_methods:
+            asyncio.run(self._run_async(async_methods))
 
-        try:
-            result = self.sync_client.translations.create(
-                text="Hello world",
-                source=Language.ENGLISH,
-                target=Language.BAMBARA,
-                model=Versions.v1,
-            )
-            print_success(
-                f"Translation v1: '{ConsoleColor.YELLOW}{result.text}{ConsoleColor.RESET}'"
-            )
+        self.cleanup()
 
-            for version in [Versions.v1, Versions.v2]:
-                transcription = self.sync_client.audio.transcriptions.create(
-                    file=self.config.audio_file_path, model=version
-                )
-                handle_transcription_result(transcription, f"v{version.value}")
-
-            tts_v1 = self.sync_client.audio.speech.create(
-                input=self.bambara_tts_text,
-                voice=1,
-                output_file=f"tts_v1_{uuid4().hex}.wav",
-                model=Versions.v1,
-            )
-            print_success(f"TTS v1: {ConsoleColor.BLUE}{tts_v1}{ConsoleColor.RESET}")
-
-            tts_v2 = self.sync_client.audio.speech.create(
-                input=self.bambara_tts_text,
-                description=f"{self.supported_speakers[0]} speaks with natural tone",
-                output_file=f"tts_v2_{uuid4().hex}.wav",
-                model=Versions.v2,
-            )
-            print_success(f"TTS v2: {ConsoleColor.BLUE}{tts_v2}{ConsoleColor.RESET}")
-
-            self.test_results[test_name] = ("Success", "All version tests completed")
-
-        except Exception as e:
-            print_error(f"Version test error: {e}")
-            self.test_results[test_name] = ("Failed", str(e))
-            logging.error(f"Traceback:\n{traceback.format_exc()}")
-
-    # ------------------------------
-    # Main Execution
-    # ------------------------------
-    def run(self) -> None:
-        print(f"\n{ConsoleColor.CYAN}{'=' * 60}{ConsoleColor.RESET}")
-        print(
-            f"{ConsoleColor.YELLOW}{'DJELIA SDK DEVELOPER COOKBOOK':^60}{ConsoleColor.RESET}"
-        )
-        print(f"{ConsoleColor.CYAN}{'=' * 60}{ConsoleColor.RESET}")
-
-        logging.basicConfig(
-            filename="djelia_cookbook.log",
-            level=logging.ERROR,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-        )
-
-        if not self.validate_setup():
-            return
-
-        try:
-            self.test_translation_sync()
-            self.test_transcription_sync()
-            self.test_tts_sync()
-            self.test_streaming_transcription_sync()
-            self.test_streaming_tts_sync()
-            self.test_version_management()
-
-            asyncio.run(self.test_translation_async())
-            asyncio.run(self.test_transcription_async())
-            asyncio.run(self.test_tts_async())
-            asyncio.run(self.test_streaming_transcription_async())
-            asyncio.run(self.test_streaming_tts_async())
-            asyncio.run(self.test_parallel_operations())
-
-            print_summary(self.test_results)
-
-        except KeyboardInterrupt:
-            print_error("Execution interrupted by user")
-            self.test_results["Overall"] = ("Failed", "Interrupted")
-            print_summary(self.test_results)
-        except Exception as e:
-            print_error(f"Unexpected error: {str(e)}")
-            logging.error(f"Unhandled exception:\n{traceback.format_exc()}")
-            self.test_results["Overall"] = ("Failed", "Runtime error")
-            print_summary(self.test_results)
+    async def _run_async(self, method_names: List[str]) -> None:
+        for name in method_names:
+            await getattr(self, name)()
