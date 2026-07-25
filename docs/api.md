@@ -10,12 +10,14 @@ The Djelia Python SDK interacts with the Djelia API at `https://djelia.cloud/api
 
 | Endpoint | Method | Description | SDK Method |
 |----------|--------|-------------|------------|
-| `/api/v{version}/models/translate/supported-languages` | GET | List supported languages | `translation.get_supported_languages()` |
-| `/api/v{version}/models/translate` | POST | Translate text | `translation.translate()` |
-| `/api/v{version}/models/transcribe` | POST | Transcribe audio | `transcription.transcribe(stream=False)` |
-| `/api/v{version}/models/transcribe/stream` | POST | Stream transcription | `transcription.transcribe(stream=True)` |
-| `/api/v{version}/models/tts` | POST | Generate TTS audio | `tts.text_to_speech(stream=False)` |
-| `/api/v{version}/models/tts/stream` | POST | Stream TTS audio | `tts.text_to_speech(stream=True)` |
+| `/api/v{version}/models/translate/supported-languages` | GET | List supported languages | `translations.list_languages()` |
+| `/api/v{version}/models/translate` | POST | Translate text | `translations.create()` |
+| `/api/v{version}/models/transcribe` | POST | Transcribe audio | `audio.transcriptions.create(stream=False)` |
+| `/api/v{version}/models/transcribe/stream` | POST | Stream transcription | `audio.transcriptions.create(stream=True)` |
+| `/api/v{version}/models/tts` | POST | Generate TTS audio | `audio.speech.create(stream=False)` |
+| `/api/v{version}/models/tts/stream` | POST | Stream TTS audio | `audio.speech.create(stream=True)` |
+
+> The pre-`2.0` methods (`translation.translate()`, `transcription.transcribe()`, `tts.text_to_speech()`) still work but are deprecated and emit a `DeprecationWarning`.
 
 ### Rate Limits
 - Contact [support@djelia.cloud](mailto:support@djelia.cloud) for rate limit details.

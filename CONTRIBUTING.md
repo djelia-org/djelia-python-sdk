@@ -64,7 +64,7 @@ To contribute, you'll need:
 5. **Run the Cookbook**:
    Verify your setup by running the test suite:
    ```bash
-   python -m cookbook.main
+   python -m cookbook
    ```
    This executes the Djelia SDK Cookbook, testing translation, transcription, and TTS features.
 
@@ -120,7 +120,7 @@ Ready to contribute code or documentation? Here's how:
 5. **Test Your Changes**:
    Run the cookbook to verify your changes:
    ```bash
-   python -m cookbook.main
+   python -m cookbook
    ```
    Ensure all tests pass and no new errors are introduced.
 
@@ -161,7 +161,7 @@ All contributions should include tests to ensure reliability:
 - Add new tests for new features or bug fixes in the `cookbook` directory.
 - Verify tests pass with:
   ```bash
-  python -m cookbook.main
+  python -m cookbook
   ```
 - If adding new dependencies, update `setup.py` (under `extras_require["test"]`) and `dev-requirements.txt`.
 
