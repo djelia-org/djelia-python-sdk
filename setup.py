@@ -67,6 +67,11 @@ setup(
             "pytest-asyncio>=0.18.0",
             "python-dotenv>=0.19.0",
         ],
+        "cookbook": [
+            "typer>=0.12.0",
+            "rich>=13.0.0",
+            "python-dotenv>=0.19.0",
+        ],
     },
     keywords=[
         "djelia",
