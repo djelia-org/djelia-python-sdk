@@ -612,25 +612,35 @@ Check logs for detailed errors, and ensure your `.env` file includes a valid `DJ
 
 ## <h3 style="color:#00FFFF;"> Explore the Djelia SDK Cookbook
 
-Want to take your Djelia SDK skills to the next level? Check out the **Djelia SDK Cookbook** for a comprehensive example that puts it all together! The cookbook demonstrates:
+Want to take your Djelia SDK skills to the next level? The **Djelia SDK Cookbook** is an interactive, `rich` + `typer` powered test suite that exercises the whole OpenAI-style API. It demonstrates:
 
-- **Full Test Suite**: Run synchronous and asynchronous tests for translation, transcription, and TTS, with detailed summaries.
-- **Error Handling**: Robust try-except blocks and logging to catch and debug issues.
+- **Interactive Test Suite**: Pick which groups to run (translation, transcription, TTS, streaming, parallel) and whether to run the sync tests, the async tests, or both.
+- **Live Metrics**: Each API call is timed and printed the moment it completes, followed by a per-test operations table (input → response, kind, latency) and a final pass/fail summary.
 - **Configuration Management**: Load API keys and audio paths from a `.env` file with validation.
 - **Advanced Features**: Parallel API operations, version management, and streaming capabilities.
-- **Modular Design**: Organized code structure for easy customization.
+- **Tidy Output**: Generated audio is written under `cookbook_output/` and cleaned up automatically (pass `--keep-audio` to keep it).
 
 To run the cookbook, clone the repository, install dependencies, and execute:
 
 ```bash
 git clone https://github.com/djelia-org/djelia-python-sdk.git
-pip install git+https://github.com/djelia-org/djelia-python-sdk.git python-dotenv
-
 cd djelia-python-sdk
-python -m cookbook.main
+pip install -e ".[cookbook]"   # installs the SDK plus typer, rich, python-dotenv
+
+# Run everything (sync + async):
+python -m cookbook
+
+# List the available test groups:
+python -m cookbook --list
+
+# Run only a couple of groups, sync-only:
+python -m cookbook -g translation -g tts --mode sync
+
+# Pick groups and mode from an interactive menu:
+python -m cookbook --interactive
 ```
 
-Make sure your `.env` file includes `DJELIA_API_KEY` and `TEST_AUDIO_FILE`. The cookbook is perfect for developers who want a ready-to-use template for building real-world applications with the Djelia SDK.
+Make sure your `.env` file includes `DJELIA_API_KEY` (and optionally `TEST_AUDIO_FILE`). The cookbook is perfect for developers who want a ready-to-use template for building real-world applications with the Djelia SDK.
 
 ## <h3 style="color:#00FFFF;"> Wrapping Up
 
