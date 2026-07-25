@@ -55,6 +55,9 @@ cover/
 *.mo
 *.pot
 
+# Cookbook test-suite artifacts
+cookbook_output/
+
 # Django stuff:
 *.log
 local_settings.py
