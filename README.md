@@ -97,7 +97,7 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-Functionality between the synchronous and asynchronous clients is otherwise identical - every example below works with either by adding `await` and using the async client.
+Non-streaming calls use the same methods with `await`. Streaming responses additionally require `async for`, as shown below.
 
 ## Streaming responses
 
