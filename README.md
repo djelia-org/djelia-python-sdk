@@ -1,653 +1,379 @@
-# <h1 style="color:#00FFFF;"> Djelia Python SDK Workshop
-Hey there! Welcome to this fun and practical workshop on using the Djelia Python SDK. Whether you're translating between African languages, transcribing audio with realtime streaming, or generating natural sounding speech, this guide has got you covered. We'll walk through installing the SDK, setting up clients, and performing some cool operations like multi language translation, audio transcription, and text-to-speech generation. I've added a sprinkle of humor to keep things light because who said coding can't be fun, right? Let's dive in!
+<h1 align="center">
+    Djelia Python SDK
+</h1>
+<p align="center">
+    <em>Advanced AI for African Languages - Translation, Transcription & Text-to-Speech</em>
+</p>
 
-## <h3 style="color:#00FFFF;"> Table of Contents
+<!-- prettier-ignore -->
+<p align="center">
+    <a href="https://pypi.org/project/djelia/"><img src="https://img.shields.io/pypi/v/djelia.svg?label=pypi%20(stable)" alt="PyPI version"></a>
+</p>
 
-1. [Installation](#installation)
-2. [Client Initialization](#client-initialization)
-   - 2.1 [API Key Loading](#api-key-loading)
-   - 2.2 [Synchronous Client](#synchronous-client)
-   - 2.3 [Asynchronous Client](#asynchronous-client)
-3. [Operations](#operations)
-   - 3.1 [Translation](#translation)
-     - 3.1.1 [Get Supported Languages](#get-supported-languages)
-     - 3.1.2 [Translate Text](#translate-text)
-   - 3.2 [Transcription](#transcription)
-     - 3.2.1 [Basic Transcription](#basic-transcription)
-     - 3.2.2 [Streaming Transcription](#streaming-transcription)
-     - 3.2.3 [French Translation](#french-translation)
-   - 3.3 [Text-to-Speech (TTS)](#text-to-speech-tts)
-     - 3.3.1 [TTS v1 with Speaker ID](#tts-v1-with-speaker-id)
-     - 3.3.2 [TTS v2 with Natural Descriptions](#tts-v2-with-natural-descriptions)
-     - 3.3.3 [Streaming TTS](#streaming-tts)
-   - 3.4 [Version Management](#version-management)
-   - 3.5 [Parallel Operations](#parallel-operations)
-4. [Error Handling](#error-handling)
-5. [Explore the Djelia SDK Cookbook](#explore-the-djelia-sdk-cookbook)
+The Djelia Python library provides convenient access to the Djelia REST API for African languages (with first-class support for Bambara / Bamanankan) from any Python application. The library includes type definitions for request params and response fields, and offers both synchronous and asynchronous clients powered by the same underlying implementation.
 
-## <h3 style="color:#00FFFF;"> Installation
+## Documentation
 
-Let's kick things off by installing the Djelia Python SDK with  one of those magical commands. Run it in your terminal, and you're good to go!
+The REST API documentation can be found at [djelia.cloud/docs](https://djelia.cloud/docs). API keys are created and managed at the [Djelia Console](https://console.djelia.cloud).
 
-```bash
-    pip install djelia
+## Installation
+
+```sh
+# install from PyPI
+pip install djelia
 ```
 
+Install directly from GitHub:
 
-Install the Djelia Python SDK directly from GitHub:
-```bash
-    pip install git+https://github.com/djelia-org/djelia-python-sdk.git
+```sh
+pip install git+https://github.com/djelia-org/djelia-python-sdk.git
 ```
 
-Alternatively, use uv for faster dependency resolution:
+Or use [uv](https://github.com/astral-sh/uv) for faster resolution:
 
-
-```bash
-    uv pip install djelia
+```sh
+uv pip install djelia
 ```
 
+Optional extras:
 
-```bash
-    uv pip install git+https://github.com/djelia-org/djelia-python-sdk.git
+| Extra | Installs | Use for |
+|-------|----------|---------|
+| `djelia[cli]` | `typer`, `rich` | The `djelia` command-line interface |
+| `djelia[cookbook]` | `typer`, `rich`, `python-dotenv` | The interactive test-suite cookbook |
+
+```sh
+pip install "djelia[cli]"
 ```
 
+## Usage
 
-## <h3 style="color:#00FFFF;"> Client Initialization
+The primary interface is a resource-based client. Set your API key in the environment:
 
-Before we can do anything fancy, we need to set up our clients. This involves loading our API key and initializing both synchronous and asynchronous clients. Here's how:
-
-## <h3 style="color:#00FFFF;"> API Key Loading
-
-First, grab your API key from a `.env` file it's the safest way to keep your secrets, well, secret! If you don't have one yet, head to the Djelia dashboard and conjure one up.
-
-```python
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-api_key = os.environ.get("DJELIA_API_KEY")
-
-# Alternatively: api_key = "your_api_key_here" (but shh, that's not safe!)
-
-# Specify your audio file for transcription tests
-audio_file_path = os.environ.get("TEST_AUDIO_FILE", "audio.wav")
+```sh
+export DJELIA_API_KEY="your-api-key"
 ```
-
-> <span style="color:red;"> **Note:** </span> Ensure your audio file (e.g., `audio.wav`) exists at the specified path. Set `TEST_AUDIO_FILE` in your `.env` file if using a custom path:
-> ```bash
-> echo "TEST_AUDIO_FILE=/path/to/your/audio.wav" >> .env
-> ```
-> Without a valid audio file, transcription operations will fail. That not what you want right 😂
-
-
-<h3 style="color:#00FFFF;">Synchronous Client</h3>
-
-
-
-For those who like to take things one step at a time, here's how to set up the synchronous client:
 
 ```python
 from djelia import Djelia
-
-djelia_client = Djelia(api_key=api_key)
-
-# if DJELIA_API_KEY is already set you can just do : (yes I know I'm making your life easy 😂)
-djelia_client = Djelia()
-
-```
-
-## <h3 style="color:#00FFFF;"> Asynchronous Client
-
-If you're ready to live on the async edge, initialize the asynchronous client like this:
-
-```python
-from djelia import DjeliaAsync
-
-djelia_async_client = DjeliaAsync(api_key=api_key)
-
-# if DJELIA_API_KEY is already set you can just do : (again easy life 😂)
-
-djelia_async_client = DjeliaAsync()
-```
-
-## <h3 style="color:#00FFFF;"> Operations 🇲🇱
-
-<span style="color:gold;"> Now for the fun part let's do stuff with the Djelia API! We'll cover translating between African languages, transcribing audio (with streaming!), and generating natural speech, with examples for both synchronous and asynchronous approaches.</span> <span style="color:red;"> Yes, yes, let's do it ❤️‍🔥! 
-
-
-## <h3 style="color:#00FFFF;"> Translation
-
-Let's unlock the power of multilingual communication! 
-## <h3 style="color:#00FFFF;"> Get Supported Languages
-
-First, let's see what languages we can work with.
-
-## <h3 style="color:#00FFFF;"> Synchronous
-
-Simple and straightforward get your supported languages and print them:
-
-```python
-supported_languages = djelia_client.translations.list_languages()
-for lang in supported_languages:
-    print(f"{lang.name}: {lang.code}")
-```
-
-## <h3 style="color:#00FFFF;"> Asynchronous
-
-For the async fans, here's how to fetch supported languages. Don't forget to run it with asyncio:
-
-```python
-import asyncio
-
-async def get_languages_test():
-    async with djelia_async_client as client:
-        supported_languages = await client.translations.list_languages()
-        for lang in supported_languages:
-            print(f"{lang.name}: {lang.code}")
-
-asyncio.run(get_languages_test())
-```
-
-## <h3 style="color:#00FFFF;"> Translate Text
-
-Let's translate some text between beautiful 🇲🇱 languages and others. Feel free to try different language combinations!
-
-With the OpenAI-style API you pass the fields straight to `.create()` — no need to build a request object:
-
-```python
 from djelia.models import Language, Versions
 
-text = "Hello, how are you today?"
+client = Djelia()
+# or pass it explicitly:
+# client = Djelia(api_key="your-api-key")
+
+
+response = client.translations.create(
+    text="Hello, how are you today?",
+    source=Language.ENGLISH,
+    target=Language.BAMBARA,
+    model=Versions.v1,
+)
+
+print(response.text)
 ```
 
-## <h3 style="color:#00FFFF;"> Synchronous
 
-Create that translation and see what you get:
 
-```python
-from djelia.models import TranslationResponse
+## Async usage
 
-try:
-    response_sync: TranslationResponse = djelia_client.translations.create(
-        text=text,
-        source=Language.ENGLISH,
-        target=Language.BAMBARA,
-        model=Versions.v1,
-    )
-    print(f"Original: {text}")
-    print(f"Translation: {response_sync.text}")
-except Exception as e:
-    print(f"Translation error: {e}")
-```
-
-## <h3 style="color:#00FFFF;"> Asynchronous
-
-Async translation because why wait around? Let's do it bro !
-
-```python
-async def translate_async():
-    async with djelia_async_client as client:
-        try:
-            response_async: TranslationResponse = await client.translations.create(
-                text=text,
-                source=Language.ENGLISH,
-                target=Language.BAMBARA,
-                model=Versions.v1,
-            )
-            print(f"Original: {text}")
-            print(f"Translation: {response_async.text}")
-            return response_async
-        except Exception as e:
-            print(f"Translation error: {e}")
-
-asyncio.run(translate_async())
-```
-
-## <h3 style="color:#00FFFF;"> Transcription
-
-Time to turn audio into text with timestamps and everything!
-
-## <h3 style="color:#00FFFF;"> Basic Transcription
-
-Let's transcribe some audio files. Make sure you have an audio file ready check <span style="color:red;"> audio_file_path</span>.
-
-## <h3 style="color:#00FFFF;"> Synchronous
-
-```python
-from djelia.models import Versions
-
-try:
-    transcription = djelia_client.audio.transcriptions.create(
-        file=audio_file_path,
-        model=Versions.v2
-    )
-    print(f"Transcribed {len(transcription)} segments:")
-    for segment in transcription:
-        print(f"[{segment.start:.2f}s - {segment.end:.2f}s]: {segment.text}")
-except Exception as e:
-    print(f"Transcription error: {e}")
-```
-
-## <h3 style="color:#00FFFF;"> Asynchronous
-
-For the async enthusiasts: (like me, I ❤️ it)
-
-```python
-async def transcribe_async():
-    async with djelia_async_client as client:
-        try:
-            transcription = await client.audio.transcriptions.create(
-                file=audio_file_path,
-                model=Versions.v2
-            )
-            print(f"Transcribed {len(transcription)} segments:")
-            for segment in transcription:
-                print(f"[{segment.start:.2f}s - {segment.end:.2f}s]: {segment.text}")
-        except Exception as e:
-            print(f"Transcription error: {e}")
-
-asyncio.run(transcribe_async())
-```
-
-## <h3 style="color:#00FFFF;"> Streaming Transcription
-
-Want realtime results? Let's stream that transcription! <span style="color:gold">This is really important of live applications</span>
-
-## <h3 style="color:#00FFFF;"> Synchronous
-
-```python
-print("Streaming transcription (showing first 3 segments)...")
-segment_count = 0
-
-try:
-    for segment in djelia_client.audio.transcriptions.create(
-        file=audio_file_path,
-        stream=True,
-        model=Versions.v2
-    ):
-        segment_count += 1
-        print(f"Segment {segment_count}: [{segment.start:.2f}s]: {segment.text}")
-        
-        if segment_count >= 3:  # Just showing first 3 for demo
-            print("...and more segments!")
-            break
-except Exception as e:
-    print(f"Streaming transcription error: {e}")
-```
-
-## <h3 style="color:#00FFFF;"> Asynchronous
-
-Async streaming because realtime is awesome: (bro, I'm telling you,  one second is a lot)
-
-```python
-async def stream_transcribe_async():
-    async with djelia_async_client as client:
-        try:
-            stream = await client.audio.transcriptions.create(
-                file=audio_file_path,
-                stream=True,
-                model=Versions.v2
-            )
-            segment_count = 0
-            async for segment in stream:
-                segment_count += 1
-                print(f"Segment {segment_count}: [{segment.start:.2f}s]: {segment.text}")
-                
-                if segment_count >= 3:  # Just showing first 3 for demo
-                    print("...and more segments!")
-                    break
-        except Exception as e:
-            print(f"Streaming transcription error: {e}")
-
-asyncio.run(stream_transcribe_async())
-```
-
-## <h3 style="color:#00FFFF;"> French Translation
-
-Want to transcribe and translate to French in one go? We've got you covered!
-
-## <h3 style="color:#00FFFF;"> Synchronous
-
-```python
-try:
-    french_transcription = djelia_client.audio.transcriptions.create(
-        file=audio_file_path,
-        translate_to_french=True,
-        model=Versions.v2
-    )
-    print(f"French translation: {french_transcription.text}")
-except Exception as e:
-    print(f"French transcription error: {e}")
-```
-
-## <h3 style="color:#00FFFF;"> Asynchronous
-
-```python
-async def transcribe_french_async():
-    async with djelia_async_client as client:
-        try:
-            french_transcription = await client.audio.transcriptions.create(
-                file=audio_file_path,
-                translate_to_french=True,
-                model=Versions.v2
-            )
-            print(f"French translation: {french_transcription.text}")
-        except Exception as e:
-            print(f"French transcription error: {e}")
-
-asyncio.run(transcribe_french_async())
-```
-
-## <h3 style="color:#00FFFF;"> Text-to-Speech (TTS)
-
-Let's make some beautiful voices! Choose between numbered speakers or describe exactly how you want it to sound.
-
-## <h3 style="color:#00FFFF;"> TTS v1 with Speaker ID
-
-Classic approach with speaker IDs (0-4). Simple and effective!
-
-```python
-bambara_text = "Aw ni ce, i ka kɛnɛ wa?"  # "Hello, how are you?" in Bambara
-```
-
-## <h3 style="color:#00FFFF;"> Synchronous
-
-Generate that audio and save it:
-
-```python
-try:
-    audio_file_v1 = djelia_client.audio.speech.create(
-        input=bambara_text,
-        voice=1,  # Choose from 0, 1, 2, 3, or 4
-        output_file="hello_v1.wav",
-        model=Versions.v1
-    )
-    print(f"Audio saved to: {audio_file_v1}")
-except Exception as e:
-    print(f"TTS v1 error: {e}")
-```
-
-## <h3 style="color:#00FFFF;"> Asynchronous
-
-Async audio generation:
-
-```python
-async def generate_audio_v1_async():
-    async with djelia_async_client as client:
-        try:
-            audio_file_v1 = await client.audio.speech.create(
-                input=bambara_text,
-                voice=1,
-                output_file="hello_v1_async.wav",
-                model=Versions.v1
-            )
-            print(f"Audio saved to: {audio_file_v1}")
-        except Exception as e:
-            print(f"TTS v1 error: {e}")
-
-asyncio.run(generate_audio_v1_async())
-```
-
-## <h3 style="color:#00FFFF;"> TTS v2 with Natural Descriptions
-
-This is where it gets fun! Describe exactly how you want the voice to sound, but make sure to include one of the supported speakers: Moussa, Sekou, or Seydou.
-
-For v2 you pass a natural-language `description` (which must name a supported speaker) instead of a numeric `voice`:
-
-```python
-v2_description = "Seydou speaks with a warm, welcoming tone"  # Must include Moussa, Sekou, or Seydou
-```
-
-> <span style="color:red"> **Note:** </span> The description field must include one of the supported speakers. For example, "Moussa speaks with a warm tone" is valid, but "Natural tone" will raise an error. 
-
-## <h3 style="color:#00FFFF;"> Synchronous
-
-Create natural sounding speech:
-
-```python
-try:
-    audio_file_v2 = djelia_client.audio.speech.create(
-        input=bambara_text,
-        description=v2_description,
-        chunk_size=1.0,  # Control speech pacing (0.1 - 2.0)
-        output_file="hello_v2.wav",
-        model=Versions.v2
-    )
-    print(f"Natural audio saved to: {audio_file_v2}")
-except Exception as e:
-    print(f"TTS v2 error: {e}")
-```
-
-## <h3 style="color:#00FFFF;"> Asynchronous
-
-Async natural speech generation:
-
-```python
-async def generate_natural_audio_async():
-    async with djelia_async_client as client:
-        try:
-            audio_file_v2 = await client.audio.speech.create(
-                input=bambara_text,
-                description=v2_description,
-                chunk_size=1.0,
-                output_file="hello_v2_async.wav",
-                model=Versions.v2
-            )
-            print(f"Natural audio saved to: {audio_file_v2}")
-        except Exception as e:
-            print(f"TTS v2 error: {e}")
-
-asyncio.run(generate_natural_audio_async())
-```
-
-## <h3 style="color:#00FFFF;"> Streaming TTS
-
-Realtime audio generation! Get chunks as they're created <span style="color:red">(v2 only)</span>.
-
-```python
-long_text = "An filɛ ni ye yɔrɔ minna ni an ye an sigi ka a layɛ yala an bɛ ka baara min kɛ ɛsike a kɛlen don ka Ɲɛ wa, ..............."  # a very long text
-streaming_description = "Seydou speaks clearly and naturally"
-```
-
-> <span style="color:red">**Note:**</span> By default, the SDK may process multiple chunks (e.g., up to 5 in some configurations). This example limits to 5 chunks for consistency, but you can adjust the limit based on your application needs.
-
-## <h3 style="color:#00FFFF;"> Synchronous
-
-Stream that audio generation: (this is handsome)
-
-```python
-print("Streaming TTS generation...")
-chunk_count = 0
-total_bytes = 0
-max_chunks = 5
-
-try:
-    for chunk in djelia_client.audio.speech.create(
-        input=long_text,
-        description=streaming_description,
-        chunk_size=1.0,
-        output_file="streamed_audio.wav",
-        stream=True,
-        model=Versions.v2
-    ):
-        chunk_count += 1
-        total_bytes += len(chunk)
-        print(f"Chunk {chunk_count}: {len(chunk)} bytes")
-        
-        if chunk_count >= max_chunks:
-            print(f"...and more chunks! (Total so far: {total_bytes} bytes)")
-            break
-except Exception as e:
-    print(f"Streaming TTS error: {e}")
-```
-
-## <h3 style="color:#00FFFF;"> Asynchronous
-
-Async streaming TTS because realtime is the future (oops, actually it's today 😂):
-
-```python
-async def stream_tts_async():
-    async with djelia_async_client as client:
-        try:
-            stream = await client.audio.speech.create(
-                input=long_text,
-                description=streaming_description,
-                chunk_size=1.0,
-                output_file="streamed_audio_async.wav",
-                stream=True,
-                model=Versions.v2
-            )
-            chunk_count = 0
-            total_bytes = 0
-            max_chunks = 5
-            
-            async for chunk in stream:
-                chunk_count += 1
-                total_bytes += len(chunk)
-                print(f"Chunk {chunk_count}: {len(chunk)} bytes")
-                
-                if chunk_count >= max_chunks:
-                    print(f"...and more chunks! (Total so far: {total_bytes} bytes)")
-                    break
-        except Exception as e:
-            print(f"Streaming TTS error: {e}")
-
-asyncio.run(stream_tts_async())
-```
-
-## <h3 style="color:#00FFFF;"> Version Management
-
-The SDK supports multiple API versions (v1, v2) via the Versions enum. Use `Versions.latest()` to get the latest version or `Versions.all_versions()` to list available versions.
-
-```python
-from djelia.models import Versions
-
-print(f"Latest version: {Versions.latest()}")
-print(f"Available versions: {[str(v) for v in Versions.all_versions()]}")
-
-# Use specific version
-try:
-    transcription = djelia_client.audio.transcriptions.create(
-        file=audio_file_path,
-        model=Versions.v2
-    )
-    print(f"Transcribed {len(transcription)} segments")
-except Exception as e:
-    print(f"Transcription error: {e}")
-```
-
-## <h3 style="color:#00FFFF;"> Parallel Operations
-
-Run multiple API operations concurrently using `asyncio.gather` with the async client. This is great for performance in applications needing simultaneous translations, transcriptions, or TTS generation.
+Simply import `DjeliaAsync` instead of `Djelia` and use `await` with each API call:
 
 ```python
 import asyncio
+from djelia import DjeliaAsync
+from djelia.models import Language, Versions
+
+async def main() -> None:
+    async with DjeliaAsync() as client:
+        response = await client.translations.create(
+            text="Hello, how are you today?",
+            source=Language.ENGLISH,
+            target=Language.BAMBARA,
+            model=Versions.v1,
+        )
+        print(response.text)
+
+asyncio.run(main())
+```
+
+Non-streaming calls use the same methods with `await`. Streaming responses additionally require `async for`, as shown below.
+
+## Streaming responses
+
+Transcription and text-to-speech support streaming so you can process results as they're produced, rather than waiting for the full response.
+
+```python
+from djelia import Djelia
+from djelia.models import Versions
+
+client = Djelia()
+
+for segment in client.audio.transcriptions.create(
+    file="/path/to/your/audio/file.wav", 
+    stream=True,
+    model=Versions.v2,
+):
+    print(f"[{segment.start:.2f}s]: {segment.text}")
+```
+
+The async client uses the exact same interface:
+
+```python
+async def stream_transcribe():
+    async with DjeliaAsync() as c:
+        stream = await c.audio.transcriptions.create(
+            file="/path/to/your/audio/file.wav", 
+            stream=True,
+            model=Versions.v2,
+        )
+        async for segment in stream:
+            print(f"[{segment.start:.2f}s]: {segment.text}")
+```
+
+Text-to-speech streaming (**v2 only**) works the same way, yielding raw audio chunks as they're generated:
+
+```python
+for chunk in client.audio.speech.create(
+    input="An filɛ ni ye yɔrɔ minna ni an ye an sigi ...",
+    description="Seydou speaks clearly and naturally",
+    chunk_size=1.0,
+    output_file="streamed_audio.wav",
+    stream=True,
+    model=Versions.v2,
+):
+    print(f"Chunk: {len(chunk)} bytes")
+```
+
+## Resources
+
+| Capability | Resource | Description |
+|------------|----------|--------------|
+| Translation | `client.translations` | Translate between French, English, and Bambara |
+| Transcription | `client.audio.transcriptions` | Speech-to-text with timestamps, optional French translation, and streaming |
+| Text-to-Speech | `client.audio.speech` | Natural speech synthesis with numbered voices (v1) or described voices (v2), plus streaming |
+
+### Translation
+
+```python
+from djelia.models import Language, Versions, TranslationResponse
+
+# List supported languages
+for lang in client.translations.list_languages():
+    print(f"{lang.name}: {lang.code}")
+
+# Translate text
+response: TranslationResponse = client.translations.create(
+    text="Hello, how are you today?",
+    source=Language.ENGLISH,
+    target=Language.BAMBARA,
+    model=Versions.v1,
+)
+print(response.text)
+```
+
+### Transcription
+
+```python
+from djelia.models import Versions
+
+transcription = client.audio.transcriptions.create(
+    file="/path/to/your/audio/file.wav",
+    model=Versions.v2,
+)
+for segment in transcription:
+    print(f"[{segment.start:.2f}s - {segment.end:.2f}s]: {segment.text}")
+
+# Transcribe and translate to French in one call (v2 only)
+french = client.audio.transcriptions.create(
+    file="/path/to/your/audio/file.wav", 
+    translate_to_french=True,
+    model=Versions.v2,
+)
+print(french.text)
+```
+
+### Text-to-Speech
+
+Choose numbered speakers (v1) or describe exactly how the voice should sound (v2).
+
+```python
+# v1 - speaker ID (0-4)
+path = client.audio.speech.create(
+    input="Aw ni ce, i ka kɛnɛ wa?",
+    voice=1,
+    output_file="hello_v1.wav",
+    model=Versions.v1,
+)
+print(f"Audio saved to: {path}")
+
+# v2 - natural description; must name a supported speaker: Moussa, Sekou, or Seydou
+path = client.audio.speech.create(
+    input="Aw ni ce, i ka kɛnɛ wa?",
+    description="Seydou speaks with a warm, welcoming tone",
+    chunk_size=1.0,          # controls pacing (0.1 - 2.0)
+    output_file="hello_v2.wav",
+    model=Versions.v2,
+)
+print(f"Natural audio saved to: {path}")
+```
+
+> [!WARNING]
+> The `description` must include one of the supported speakers. `"Moussa speaks with a warm tone"` is valid; `"Natural tone"` raises a `SpeakerError`.
+
+## Version management
+
+The SDK supports multiple API versions through the `Versions` enum.
+
+```python
+from djelia.models import Versions
+
+Versions.latest()                              # v2
+[str(v) for v in Versions.all_versions()]      # ['v1', 'v2']
+Versions.from_value("v2")                      # accepts enum, int, or "v2"-style strings
+```
+
+| Version | Translation | Transcription | Text-to-Speech |
+|---------|-------------|----------------|------------------|
+| **v1** | ✅ | ✅ | Numbered voices (`voice=0..4`) |
+| **v2** | ✅ | ✅ (+ French, streaming) | Described voices + streaming |
+
+## Async & parallel operations
+
+Run multiple operations concurrently with `asyncio.gather` and the async client - ideal for high-throughput applications.
+
+```python
+import asyncio
+from djelia import DjeliaAsync
 from djelia.models import Language, Versions
 
 async def parallel_operations():
-    async with DjeliaAsync(api_key=api_key) as client:
-        try:
-            results = await asyncio.gather(
-                client.translations.create(
-                    text="Hello", source=Language.ENGLISH, target=Language.BAMBARA, model=Versions.v1
-                ),
-                client.audio.transcriptions.create(file=audio_file_path, model=Versions.v2),
-                client.audio.speech.create(
-                    input="Aw ni ce, i ka kɛnɛ wa?",
-                    description="Moussa speaks with a clear tone",
-                    chunk_size=1.0,
-                    output_file="parallel_tts.wav",
-                    model=Versions.v2,
-                ),
-                return_exceptions=True
-            )
-            
-            for i, result in enumerate(results):
-                if isinstance(result, Exception):
-                    print(f"Operation {i+1} failed: {result}")
-                else:
-                    print(f"Operation {i+1} succeeded: {type(result).__name__}")
-        except Exception as e:
-            print(f"Parallel operations error: {e}")
+    async with DjeliaAsync() as client:
+        results = await asyncio.gather(
+            client.translations.create(
+                text="Hello", source=Language.ENGLISH,
+                target=Language.BAMBARA, model=Versions.v1,
+            ),
+            client.audio.transcriptions.create(file="audio.wav", model=Versions.v2),
+            client.audio.speech.create(
+                input="Aw ni ce, i ka kɛnɛ wa?",
+                description="Moussa speaks with a clear tone",
+                chunk_size=1.0,
+                output_file="parallel_tts.wav",
+                model=Versions.v2,
+            ),
+            return_exceptions=True,
+        )
+        for i, result in enumerate(results, 1):
+            if isinstance(result, Exception):
+                print(f"Operation {i} failed: {result}")
+            else:
+                print(f"Operation {i} succeeded: {type(result).__name__}")
 
 asyncio.run(parallel_operations())
 ```
 
-## <h3 style="color:#00FFFF;"> Error Handling
+## Handling errors
 
-The Djelia SDK provides specific exception classes to handle errors gracefully. Use these to catch and respond to issues like invalid API keys, unsupported languages, or incorrect speaker descriptions.
+The SDK raises specific exception classes so you can respond precisely.
 
 ```python
-from djelia.utils.exceptions import AuthenticationError, APIError, ValidationError, LanguageError, SpeakerError
+from djelia.utils.exceptions import (
+    AuthenticationError, APIError, ValidationError, LanguageError, SpeakerError,
+)
 
 try:
-    response = djelia_client.translations.create(
+    response = client.translations.create(
         text="Hello, how are you today?",
         source=Language.ENGLISH,
         target=Language.BAMBARA,
         model=Versions.v1,
     )
-    print(f"Translation: {response.text}")
+    print(response.text)
 except AuthenticationError as e:
     print(f"Authentication error (check API key): {e}")
 except LanguageError as e:
     print(f"Invalid or unsupported language: {e}")
 except ValidationError as e:
-    print(f"Validation error (e.g., invalid input): {e}")
+    print(f"Validation error: {e}")
 except APIError as e:
     print(f"API error (status {e.status_code}): {e.message}")
 except Exception as e:
     print(f"Unexpected error: {e}")
 ```
 
-## <h3 style="color:#00FFFF;"> Common Exceptions:
+| Exception | Meaning |
+|-----------|---------|
+| `AuthenticationError` | Invalid or expired API key (HTTP 401) |
+| `APIError` | General API issues - forbidden (403), not found (404), etc. |
+| `ValidationError` | Invalid inputs, e.g. missing audio file or bad parameters (422) |
+| `LanguageError` | Unsupported source or target language |
+| `SpeakerError` | Invalid speaker ID (v1) or description missing a supported speaker (v2) |
 
-- **AuthenticationError**: Invalid or expired API key (HTTP 401).
-- **APIError**: General API issues, including forbidden access (403) or resource not found (404).
-- **ValidationError**: Invalid inputs, such as missing audio files or incorrect parameters (422).
-- **LanguageError**: Unsupported source or target language.
-- **SpeakerError**: Invalid speaker ID (TTS v1) or description missing a supported speaker (TTS v2).
+## Command line interface
 
-Check logs for detailed errors, and ensure your `.env` file includes a valid `DJELIA_API_KEY` and `TEST_AUDIO_FILE`.
+Install the CLI extra and the `djelia` command becomes available in your terminal:
 
-## <h3 style="color:#00FFFF;"> Explore the Djelia SDK Cookbook
-
-Want to take your Djelia SDK skills to the next level? The **Djelia SDK Cookbook** is an interactive, `rich` + `typer` powered test suite that exercises the whole OpenAI-style API. It demonstrates:
-
-- **Interactive Test Suite**: Pick which groups to run (translation, transcription, TTS, streaming, parallel) and whether to run the sync tests, the async tests, or both.
-- **Live Metrics**: Each API call is timed and printed the moment it completes, followed by a per-test operations table (input → response, kind, latency) and a final pass/fail summary.
-- **Configuration Management**: Load API keys and audio paths from a `.env` file with validation.
-- **Advanced Features**: Parallel API operations, version management, and streaming capabilities.
-- **Tidy Output**: Generated audio is written under `cookbook_output/` and cleaned up automatically (pass `--keep-audio` to keep it).
-
-To run the cookbook, clone the repository, install dependencies, and execute:
-
-```bash
-git clone https://github.com/djelia-org/djelia-python-sdk.git
-cd djelia-python-sdk
-pip install -e ".[cookbook]"   # installs the SDK plus typer, rich, python-dotenv
-
-# Run everything (sync + async):
-python -m cookbook
-
-# List the available test groups:
-python -m cookbook --list
-
-# Run only a couple of groups, sync-only:
-python -m cookbook -g translation -g tts --mode sync
-
-# Pick groups and mode from an interactive menu:
-python -m cookbook --interactive
+```sh
+pip install "djelia[cli]"
+export DJELIA_API_KEY="your-api-key"   # or pass --api-key on any command
 ```
 
-Make sure your `.env` file includes `DJELIA_API_KEY` (and optionally `TEST_AUDIO_FILE`). The cookbook is perfect for developers who want a ready-to-use template for building real-world applications with the Djelia SDK.
+| Command | Description |
+|---------|--------------|
+| `djelia languages` | List the languages supported for translation |
+| `djelia translate` | Translate text between supported languages |
+| `djelia transcribe` | Transcribe an audio file to text |
+| `djelia speak` | Synthesize speech from text and save it to a file |
+| `djelia version` | Show SDK and available API model versions |
 
-## <h3 style="color:#00FFFF;"> Wrapping Up
+Global options `--api-key` (env `DJELIA_API_KEY`) and `--base-url` (env `BASE_URL`) work on every command. Run `djelia --help` or `djelia <command> --help` for details.
 
-And there you have it a full workshop on using the Djelia Python SDK! You've installed it, set up clients, and mastered translation, transcription, and text-to-speech both synchronously and asynchronously. Pretty cool, right? Feel free to tweak the code, explore different languages and voices, and check out the Djelia SDK Cookbook for a deeper dive.
+```sh
+# Full panel output
+djelia translate "Hello, how are you?" --from english --to bambara
 
-**Pro tip**: The async methods are perfect for applications that need to handle multiple operations simultaneously. The streaming features are fantastic for realtime applications. And remember, Bambara is just one of the beautiful African languages you can work with!
+# Script-friendly: print only the translated text
+djelia translate "Good morning" -f en -t fr --raw
 
-<span style="color:red"><strong>IMPORTANT</strong></span>: If you encounter any issues, please create an issue in the repository, explain the problem you encountered (include logs if possible), and tag @sudoping01.
+# Read text from stdin
+echo "Hello" | djelia translate - --from english --to bambara
 
-**Great job, bro 🫂! This is a fantastic integration guide built with ❤️ for 🇲🇱 and beyond!**<br>
+# Segments with timestamps
+djelia transcribe audio.wav --model v2
+
+# Stream segments as they are produced
+djelia transcribe audio.wav --model v2 --stream
+
+# v2 with a named speaker (Moussa / Sekou / Seydou)
+djelia speak "Aw ni ce, i ka kɛnɛ wa?" --model v2 --speaker Sekou -o hello_v2.wav
+```
+
+## Cookbook
+
+The **Djelia SDK Cookbook** is an interactive, test suite that exercises the whole API with live metrics - timed calls, a per-test operations table, and a pass/fail summary.
+
+```sh
+git clone https://github.com/djelia-org/djelia-python-sdk.git
+cd djelia-python-sdk
+pip install -e ".[cookbook]"   # SDK plus typer, rich, python-dotenv
+
+python -m cookbook                              # run everything (sync + async)
+python -m cookbook --list                       # list available test groups
+python -m cookbook -g translation -g tts --mode sync   # a couple of groups, sync only
+python -m cookbook --interactive                # pick groups and mode from a menu
+```
+
+Generated audio is written to `cookbook_output/` and cleaned up automatically (pass `--keep-audio` to keep it). Make sure your `.env` includes `DJELIA_API_KEY` (and optionally `TEST_AUDIO_FILE`).
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+We are keen for your feedback - please open an [issue](https://github.com/djelia-org/djelia-python-sdk/issues) with questions, bugs, or suggestions, and tag [@sudoping01](https://github.com/sudoping01).
+
+---
+
+<p align="center">
+    Built with ❤️ for 🇲🇱 and beyond.
+</p>
