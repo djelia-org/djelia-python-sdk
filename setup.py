@@ -8,7 +8,7 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="djelia",
-    version="2.1.1",
+    version="3.1.1",
     author="Djelia",
     author_email="sudoping01@gmail.com",
     description="Djelia Python SDK - Advanced AI for African Languages",
