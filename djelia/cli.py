@@ -9,7 +9,7 @@ Run ``djelia --help`` for the available commands.
 from __future__ import annotations
 
 import sys
-from typing import List, Optional
+from typing import Optional
 
 try:
     import typer
