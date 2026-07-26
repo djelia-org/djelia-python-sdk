@@ -72,6 +72,15 @@ setup(
             "rich>=13.0.0",
             "python-dotenv>=0.19.0",
         ],
+        "cli": [
+            "typer>=0.12.0",
+            "rich>=13.0.0",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "djelia=djelia.cli:app",
+        ],
     },
     keywords=[
         "djelia",
