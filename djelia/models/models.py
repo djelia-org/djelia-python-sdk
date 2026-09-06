@@ -63,7 +63,7 @@ class HttpRequestInfo:
 
 
 class DjeliaRequest:
-    endpoint_prefix = "/api/v{}/models/"
+    endpoint_prefix = "/v{}/models/"
 
     get_supported_languages: HttpRequestInfo = HttpRequestInfo(
         endpoint=endpoint_prefix + "translate/supported-languages", method="GET"
