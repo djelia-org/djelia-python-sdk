@@ -1,8 +1,13 @@
 import warnings
 from collections.abc import AsyncGenerator, Generator
 
-from djelia.models import (DjeliaRequest, ErrorsMessage, TTSRequest,
-                           TTSRequestV2, Versions)
+from djelia.models import (
+    DjeliaRequest,
+    ErrorsMessage,
+    TTSRequest,
+    TTSRequestV2,
+    Versions,
+)
 from djelia.utils.exceptions import SpeakerError
 
 

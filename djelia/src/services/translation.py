@@ -1,7 +1,13 @@
 import warnings
 
-from djelia.models import (DjeliaRequest, Language, SupportedLanguageSchema,
-                           TranslationRequest, TranslationResponse, Versions)
+from djelia.models import (
+    DjeliaRequest,
+    Language,
+    SupportedLanguageSchema,
+    TranslationRequest,
+    TranslationResponse,
+    Versions,
+)
 
 
 class Translations:
