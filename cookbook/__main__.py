@@ -149,7 +149,9 @@ def run(
 
     reporter = Reporter(console)
     if not config.api_key:
-        console.print("[red]DJELIA_API_KEY is not set[/] (use --api-key or a .env file).")
+        console.print(
+            "[red]DJELIA_API_KEY is not set[/] (use --api-key or a .env file)."
+        )
         raise typer.Exit(1)
 
     try:
