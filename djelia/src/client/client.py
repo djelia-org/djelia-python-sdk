@@ -53,6 +53,7 @@ class Djelia:
     )
     def _make_request(self, method: str, endpoint: str, **kwargs):
         headers = self.auth.get_headers()
+        url = self.base_url.rstrip("/") + endpoint
 
         if "params" in kwargs:
             params = kwargs["params"]
@@ -61,7 +62,7 @@ class Djelia:
                     params[key] = str(value).lower()
 
         try:
-            response = requests.request(method, endpoint, headers=headers, **kwargs)
+            response = requests.request(method, url, headers=headers, **kwargs)
             response.raise_for_status()
             return response
         except requests.exceptions.HTTPError as e:
@@ -112,6 +113,7 @@ class DjeliaAsync:
     )
     async def _make_request(self, method: str, endpoint: str, **kwargs):
         headers = self.auth.get_headers()
+        url = self.base_url.rstrip("/") + endpoint
 
         if "params" in kwargs:
             params = kwargs["params"]
@@ -120,7 +122,7 @@ class DjeliaAsync:
                     params[key] = str(value).lower()
 
         async with self.session.request(
-            method, endpoint, headers=headers, **kwargs
+            method, url, headers=headers, **kwargs
         ) as response:
             try:
                 response.raise_for_status()
@@ -138,6 +140,7 @@ class DjeliaAsync:
 
     async def _make_streaming_request(self, method: str, endpoint: str, **kwargs):
         headers = self.auth.get_headers()
+        url = self.base_url.rstrip("/") + endpoint
 
         if "params" in kwargs:
             params = kwargs["params"]
@@ -146,7 +149,7 @@ class DjeliaAsync:
                     params[key] = str(value).lower()
 
         response = await self.session.request(
-            method, endpoint, headers=headers, **kwargs
+            method, url, headers=headers, **kwargs
         )
         try:
             response.raise_for_status()
