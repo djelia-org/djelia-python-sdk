@@ -1,5 +1,4 @@
-from djelia.src.services.transcription import (AsyncTranscriptions,
-                                               Transcriptions)
+from djelia.src.services.transcription import AsyncTranscriptions, Transcriptions
 from djelia.src.services.tts import AsyncSpeech, Speech
 
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
 from uuid import uuid4
 
 from djelia import Djelia, DjeliaAsync
@@ -16,7 +15,7 @@ from .utils import Reporter
 #                  Test registry
 # ================================================
 
-GROUP_ORDER: List[str] = [
+GROUP_ORDER: list[str] = [
     "translation",
     "transcription",
     "stream-transcription",
@@ -26,7 +25,7 @@ GROUP_ORDER: List[str] = [
     "parallel",
 ]
 
-GROUPS: Dict[str, Dict[str, Optional[str]]] = {
+GROUPS: dict[str, dict[str, str | None]] = {
     "translation": {
         "label": "Translation",
         "sync": "translation_sync",
@@ -98,7 +97,7 @@ class DjeliaTestSuite:
 
         self.output_dir = Path(config.output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self._generated: List[Path] = []
+        self._generated: list[Path] = []
 
         self.samples = [
             ("Hello, how are you?", Language.ENGLISH, Language.BAMBARA),
@@ -430,9 +429,7 @@ class DjeliaTestSuite:
                         ),
                         return_exceptions=True,
                     )
-                    succeeded = sum(
-                        1 for r in results if not isinstance(r, Exception)
-                    )
+                    succeeded = sum(1 for r in results if not isinstance(r, Exception))
                     op.set(f"{succeeded}/{len(results)} succeeded")
 
             names = ["languages", "translation", "transcription", "tts"]
@@ -450,7 +447,7 @@ class DjeliaTestSuite:
     # ---------------
     # Orchestration #
     # ---------------
-    def run(self, groups: List[str], mode: str) -> None:
+    def run(self, groups: list[str], mode: str) -> None:
         selected = [g for g in GROUP_ORDER if g in groups]
 
         for key in selected:
@@ -468,6 +465,6 @@ class DjeliaTestSuite:
 
         self.cleanup()
 
-    async def _run_async(self, method_names: List[str]) -> None:
+    async def _run_async(self, method_names: list[str]) -> None:
         for name in method_names:
             await getattr(self, name)()
