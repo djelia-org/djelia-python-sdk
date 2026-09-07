@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import time
 import traceback
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Iterator, List, Optional
 
 from rich.box import ROUNDED
 from rich.console import Console
@@ -52,8 +52,8 @@ class TestResult:
     status: str  # "pass" | "fail" | "skip"
     detail: str = ""
     seconds: float = 0.0
-    events: List[OpEvent] = field(default_factory=list)
-    error: Optional[str] = None  # traceback, when status == "fail"
+    events: list[OpEvent] = field(default_factory=list)
+    error: str | None = None  # traceback, when status == "fail"
 
 
 class _OpHandle:
@@ -76,11 +76,11 @@ class Case:
         self.name = name
         self.group = group
         self.console = console
-        self.events: List[OpEvent] = []
+        self.events: list[OpEvent] = []
         self.status = "pass"
         self.detail = ""
         self.seconds = 0.0
-        self.error: Optional[str] = None
+        self.error: str | None = None
 
     @contextmanager
     def op(self, kind: str, label: str) -> Iterator[_OpHandle]:
@@ -121,7 +121,7 @@ class Reporter:
 
     def __init__(self, console: Console = console) -> None:
         self.console = console
-        self.results: List[TestResult] = []
+        self.results: list[TestResult] = []
 
     def section(self, title: str, style: str = "cyan") -> None:
         self.console.print()
