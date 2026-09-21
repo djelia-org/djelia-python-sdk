@@ -1,22 +1,30 @@
-from typing import Union
-
 import aiohttp
 import requests
-from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
-                      wait_random_exponential)
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
 from djelia.config.settings import Settings
 from djelia.src.auth import Auth
-from djelia.src.services import (TTS, AsyncAudio, AsyncTranscription,
-                                 AsyncTranslation, AsyncTranslations, AsyncTTS,
-                                 Audio, Transcription, Translation,
-                                 Translations)
+from djelia.src.services import (
+    TTS,
+    AsyncAudio,
+    AsyncTranscription,
+    AsyncTranslation,
+    AsyncTranslations,
+    AsyncTTS,
+    Audio,
+    Transcription,
+    Translation,
+    Translations,
+)
 from djelia.utils.errors import api_exception, general_exception
 
 
-def _build_settings(
-    api_key: Union[str, None], base_url: Union[str, None]
-) -> Settings:
+def _build_settings(api_key: str | None, base_url: str | None) -> Settings:
     """Resolve settings, letting explicit args override environment variables.
 
     Fields use validation aliases, so init overrides must be passed by alias.
@@ -30,9 +38,7 @@ def _build_settings(
 
 
 class Djelia:
-    def __init__(
-        self, api_key: Union[str, None] = None, base_url: Union[str, None] = None
-    ):
+    def __init__(self, api_key: str | None = None, base_url: str | None = None):
         self.settings = _build_settings(api_key, base_url)
         self.base_url = self.settings.base_url
         self.auth = Auth(self.settings.djelia_api_key)
@@ -71,9 +77,7 @@ class Djelia:
 
 
 class DjeliaAsync:
-    def __init__(
-        self, api_key: Union[str, None] = None, base_url: Union[str, None] = None
-    ):
+    def __init__(self, api_key: str | None = None, base_url: str | None = None):
         self.settings = _build_settings(api_key, base_url)
         self.base_url = self.settings.base_url
         self.auth = Auth(self.settings.djelia_api_key)

@@ -3,7 +3,6 @@ from __future__ import annotations
 import enum
 import os
 import sys
-from typing import List, Optional, Tuple
 
 import typer
 from rich.prompt import Confirm, Prompt
@@ -48,7 +47,7 @@ def _groups_table() -> Table:
     return table
 
 
-def _select_interactively() -> Tuple[List[str], str]:
+def _select_interactively() -> tuple[list[str], str]:
     console.print(_groups_table())
     console.print(
         "[dim]Enter group numbers separated by commas (e.g. 1,3,4), "
@@ -75,7 +74,7 @@ def _select_interactively() -> Tuple[List[str], str]:
 
 @app.command()
 def run(
-    group: List[str] = typer.Option(
+    group: list[str] = typer.Option(
         [],
         "--group",
         "-g",
@@ -90,14 +89,14 @@ def run(
     list_groups: bool = typer.Option(
         False, "--list", "-l", help="List available test groups and exit."
     ),
-    api_key: Optional[str] = typer.Option(
+    api_key: str | None = typer.Option(
         None,
         "--api-key",
         envvar="DJELIA_API_KEY",
         help="Djelia API key.",
         show_default=False,
     ),
-    audio: Optional[str] = typer.Option(
+    audio: str | None = typer.Option(
         None, "--audio", "-a", help="Path to the audio file used for transcription."
     ),
     output_dir: str = typer.Option(
@@ -149,7 +148,9 @@ def run(
 
     reporter = Reporter(console)
     if not config.api_key:
-        console.print("[red]DJELIA_API_KEY is not set[/] (use --api-key or a .env file).")
+        console.print(
+            "[red]DJELIA_API_KEY is not set[/] (use --api-key or a .env file)."
+        )
         raise typer.Exit(1)
 
     try:
