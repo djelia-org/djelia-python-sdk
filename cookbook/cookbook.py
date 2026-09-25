@@ -430,9 +430,7 @@ class DjeliaTestSuite:
                         ),
                         return_exceptions=True,
                     )
-                    succeeded = sum(
-                        1 for r in results if not isinstance(r, Exception)
-                    )
+                    succeeded = sum(1 for r in results if not isinstance(r, Exception))
                     op.set(f"{succeeded}/{len(results)} succeeded")
 
             names = ["languages", "translation", "transcription", "tts"]

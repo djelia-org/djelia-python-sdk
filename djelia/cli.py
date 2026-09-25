@@ -262,9 +262,7 @@ def _transcribe_stream(
         for seg in segments:
             count += 1
             if hasattr(seg, "start"):
-                console.print(
-                    f"[cyan]{seg.start:6.2f}-{seg.end:6.2f}s[/]  {seg.text}"
-                )
+                console.print(f"[cyan]{seg.start:6.2f}-{seg.end:6.2f}s[/]  {seg.text}")
             else:
                 console.print(seg.text)
     console.print(f"[dim]{count} segments streamed[/]")
@@ -352,7 +350,9 @@ def _speak_stream(
         ):
             chunks += 1
             total += len(chunk)
-            status.update(f"[green]streaming audio…[/] {chunks} chunks · {total:,} bytes")
+            status.update(
+                f"[green]streaming audio…[/] {chunks} chunks · {total:,} bytes"
+            )
     console.print(f"[dim]{chunks} chunks · {total:,} bytes[/]")
     if os.path.exists(output):
         _report_audio(output)

@@ -1,8 +1,11 @@
 from .audio import AsyncAudio, Audio
-from .transcription import (AsyncTranscription, AsyncTranscriptions,
-                            Transcription, Transcriptions)
-from .translation import (AsyncTranslation, AsyncTranslations, Translation,
-                          Translations)
+from .transcription import (
+    AsyncTranscription,
+    AsyncTranscriptions,
+    Transcription,
+    Transcriptions,
+)
+from .translation import AsyncTranslation, AsyncTranslations, Translation, Translations
 from .tts import TTS, AsyncSpeech, AsyncTTS, Speech
 
 __all__ = [

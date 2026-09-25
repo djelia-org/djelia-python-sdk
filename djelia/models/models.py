@@ -29,9 +29,7 @@ class Versions(int, Enum):
             return value
         if isinstance(value, bool):
             raise ValueError(
-                ErrorsMessage.invalid_version.format(
-                    value, [str(v) for v in cls]
-                )
+                ErrorsMessage.invalid_version.format(value, [str(v) for v in cls])
             )
         if isinstance(value, int):
             candidate = value
@@ -39,9 +37,7 @@ class Versions(int, Enum):
             normalized = value.strip().lower().lstrip("v")
             if not normalized.isdigit():
                 raise ValueError(
-                    ErrorsMessage.invalid_version.format(
-                        value, [str(v) for v in cls]
-                    )
+                    ErrorsMessage.invalid_version.format(value, [str(v) for v in cls])
                 )
             candidate = int(normalized)
         else:
@@ -67,7 +63,7 @@ class HttpRequestInfo:
 
 
 class DjeliaRequest:
-    endpoint_prefix = "https://djelia.cloud/api/v{}/models/"
+    endpoint_prefix = "/v{}/models/"
 
     get_supported_languages: HttpRequestInfo = HttpRequestInfo(
         endpoint=endpoint_prefix + "translate/supported-languages", method="GET"
