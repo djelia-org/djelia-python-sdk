@@ -5,11 +5,6 @@
     <em>Advanced AI for African Languages - Translation, Transcription & Text-to-Speech</em>
 </p>
 
-<h1 align="center">
-    THIS REPO IS NOT MAINTAINED ANYMORE, NOW WE SUPPORT OPENAI API STYLE SO YOU CAN USE OPENAI SDK (OR ANY TOOLS) TO ACCESS OUR API
-    SEE THE MIGRAITION GUIDE HERE : https://docs.djelia.cloud/migration
-</h1>
-
 <p align="center">
     <a href="https://pypi.org/project/djelia/"><img src="https://img.shields.io/pypi/v/djelia.svg?label=pypi%20(stable)" alt="PyPI version"></a>
 </p>
@@ -21,7 +16,8 @@ The Djelia Python library provides convenient access to the Djelia REST API for 
 >
 > Djelia now provides an **OpenAI-compatible API**, so you can use the official OpenAI SDK or other OpenAI-compatible tools to access the Djelia API.
 >
-> **[See the migration guide →](https://docs.djelia.cloud/migration)**
+> **[See the migration guide](https://docs.djelia.cloud/migration)**
+> 
 ## Documentation
 
 The REST API documentation can be found at [djelia.cloud/docs](https://djelia.cloud/docs). API keys are created and managed at the [Djelia Console](https://console.djelia.cloud).
