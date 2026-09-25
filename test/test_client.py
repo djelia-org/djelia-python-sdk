@@ -15,7 +15,7 @@ def test_custom_base_url_is_used_to_build_the_request_url():
     client = Djelia(api_key=VALID_API_KEY, base_url="https://custom.example.com")
 
     with patch("djelia.src.client.client.requests.request") as mock_request:
-        mock_request.return_value = MagicMock(status_code=200, json=lambda: [])
+        mock_request.return_value = MagicMock(status_code=200, json=list)
 
         client.translations.list_languages()
 
