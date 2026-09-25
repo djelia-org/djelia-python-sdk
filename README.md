@@ -5,13 +5,19 @@
     <em>Advanced AI for African Languages - Translation, Transcription & Text-to-Speech</em>
 </p>
 
-<!-- prettier-ignore -->
 <p align="center">
     <a href="https://pypi.org/project/djelia/"><img src="https://img.shields.io/pypi/v/djelia.svg?label=pypi%20(stable)" alt="PyPI version"></a>
 </p>
 
 The Djelia Python library provides convenient access to the Djelia REST API for African languages (with first-class support for Bambara / Bamanankan) from any Python application. The library includes type definitions for request params and response fields, and offers both synchronous and asynchronous clients powered by the same underlying implementation.
 
+> [!WARNING]
+> **This SDK is no longer maintained.**
+>
+> Djelia now provides an **OpenAI-compatible API**, so you can use the official OpenAI SDK or other OpenAI-compatible tools to access the Djelia API.
+>
+> **[See the migration guide](https://docs.djelia.cloud/migration)**
+> 
 ## Documentation
 
 The REST API documentation can be found at [djelia.cloud/docs](https://djelia.cloud/docs). API keys are created and managed at the [Djelia Console](https://console.djelia.cloud).

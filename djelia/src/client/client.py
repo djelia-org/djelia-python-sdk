@@ -24,7 +24,7 @@ from djelia.src.services import (
 from djelia.utils.errors import api_exception, general_exception
 
 
-def _build_settings(api_key: str | None, base_url: str | None) -> Settings:
+def _build_settings(api_key: Union[str, None], base_url: Union[str, None]) -> Settings:
     """Resolve settings, letting explicit args override environment variables.
 
     Fields use validation aliases, so init overrides must be passed by alias.
@@ -59,6 +59,7 @@ class Djelia:
     )
     def _make_request(self, method: str, endpoint: str, **kwargs):
         headers = self.auth.get_headers()
+        url = self.base_url.rstrip("/") + endpoint
 
         if "params" in kwargs:
             params = kwargs["params"]
@@ -67,7 +68,7 @@ class Djelia:
                     params[key] = str(value).lower()
 
         try:
-            response = requests.request(method, endpoint, headers=headers, **kwargs)
+            response = requests.request(method, url, headers=headers, **kwargs)
             response.raise_for_status()
             return response
         except requests.exceptions.HTTPError as e:
@@ -116,6 +117,7 @@ class DjeliaAsync:
     )
     async def _make_request(self, method: str, endpoint: str, **kwargs):
         headers = self.auth.get_headers()
+        url = self.base_url.rstrip("/") + endpoint
 
         if "params" in kwargs:
             params = kwargs["params"]
@@ -124,7 +126,7 @@ class DjeliaAsync:
                     params[key] = str(value).lower()
 
         async with self.session.request(
-            method, endpoint, headers=headers, **kwargs
+            method, url, headers=headers, **kwargs
         ) as response:
             try:
                 response.raise_for_status()
@@ -142,6 +144,7 @@ class DjeliaAsync:
 
     async def _make_streaming_request(self, method: str, endpoint: str, **kwargs):
         headers = self.auth.get_headers()
+        url = self.base_url.rstrip("/") + endpoint
 
         if "params" in kwargs:
             params = kwargs["params"]
@@ -149,9 +152,7 @@ class DjeliaAsync:
                 if isinstance(value, bool):
                     params[key] = str(value).lower()
 
-        response = await self.session.request(
-            method, endpoint, headers=headers, **kwargs
-        )
+        response = await self.session.request(method, url, headers=headers, **kwargs)
         try:
             response.raise_for_status()
             return response
