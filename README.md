@@ -90,6 +90,7 @@ import asyncio
 from djelia import DjeliaAsync
 from djelia.models import Language, Versions
 
+
 async def main() -> None:
     async with DjeliaAsync() as client:
         response = await client.translations.create(
@@ -99,6 +100,7 @@ async def main() -> None:
             model=Versions.v1,
         )
         print(response.text)
+
 
 asyncio.run(main())
 ```
@@ -116,7 +118,7 @@ from djelia.models import Versions
 client = Djelia()
 
 for segment in client.audio.transcriptions.create(
-    file="/path/to/your/audio/file.wav", 
+    file="/path/to/your/audio/file.wav",
     stream=True,
     model=Versions.v2,
 ):
@@ -129,7 +131,7 @@ The async client uses the exact same interface:
 async def stream_transcribe():
     async with DjeliaAsync() as c:
         stream = await c.audio.transcriptions.create(
-            file="/path/to/your/audio/file.wav", 
+            file="/path/to/your/audio/file.wav",
             stream=True,
             model=Versions.v2,
         )
@@ -192,7 +194,7 @@ for segment in transcription:
 
 # Transcribe and translate to French in one call (v2 only)
 french = client.audio.transcriptions.create(
-    file="/path/to/your/audio/file.wav", 
+    file="/path/to/your/audio/file.wav",
     translate_to_french=True,
     model=Versions.v2,
 )
@@ -217,7 +219,7 @@ print(f"Audio saved to: {path}")
 path = client.audio.speech.create(
     input="Aw ni ce, i ka kɛnɛ wa?",
     description="Seydou speaks with a warm, welcoming tone",
-    chunk_size=1.0,          # controls pacing (0.1 - 2.0)
+    chunk_size=1.0,  # controls pacing (0.1 - 2.0)
     output_file="hello_v2.wav",
     model=Versions.v2,
 )
@@ -234,9 +236,9 @@ The SDK supports multiple API versions through the `Versions` enum.
 ```python
 from djelia.models import Versions
 
-Versions.latest()                              # v2
-[str(v) for v in Versions.all_versions()]      # ['v1', 'v2']
-Versions.from_value("v2")                      # accepts enum, int, or "v2"-style strings
+Versions.latest()  # v2
+[str(v) for v in Versions.all_versions()]  # ['v1', 'v2']
+Versions.from_value("v2")  # accepts enum, int, or "v2"-style strings
 ```
 
 | Version | Translation | Transcription | Text-to-Speech |
@@ -253,12 +255,15 @@ import asyncio
 from djelia import DjeliaAsync
 from djelia.models import Language, Versions
 
+
 async def parallel_operations():
     async with DjeliaAsync() as client:
         results = await asyncio.gather(
             client.translations.create(
-                text="Hello", source=Language.ENGLISH,
-                target=Language.BAMBARA, model=Versions.v1,
+                text="Hello",
+                source=Language.ENGLISH,
+                target=Language.BAMBARA,
+                model=Versions.v1,
             ),
             client.audio.transcriptions.create(file="audio.wav", model=Versions.v2),
             client.audio.speech.create(
@@ -276,6 +281,7 @@ async def parallel_operations():
             else:
                 print(f"Operation {i} succeeded: {type(result).__name__}")
 
+
 asyncio.run(parallel_operations())
 ```
 
@@ -285,7 +291,11 @@ The SDK raises specific exception classes so you can respond precisely.
 
 ```python
 from djelia.utils.exceptions import (
-    AuthenticationError, APIError, ValidationError, LanguageError, SpeakerError,
+    AuthenticationError,
+    APIError,
+    ValidationError,
+    LanguageError,
+    SpeakerError,
 )
 
 try:

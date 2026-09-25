@@ -1,19 +1,13 @@
 class DjeliaError(Exception):
     """Base exception for all Djelia client errors"""
 
-    pass
-
 
 class AuthenticationError(DjeliaError):
     """Exception raised for authentication errors"""
 
-    pass
-
 
 class ValidationError(DjeliaError):
     """Exception raised for validation errors"""
-
-    pass
 
 
 class APIError(DjeliaError):
@@ -28,10 +22,6 @@ class APIError(DjeliaError):
 class LanguageError(ValidationError):
     """Exception raised for unsupported languages"""
 
-    pass
-
 
 class SpeakerError(ValidationError):
     """Exception raised for invalid speaker IDs"""
-
-    pass

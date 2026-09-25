@@ -9,7 +9,6 @@ Run ``djelia --help`` for the available commands.
 from __future__ import annotations
 
 import sys
-from typing import Optional
 
 try:
     import typer
@@ -43,8 +42,8 @@ app = typer.Typer(
 # Shared state and helpers
 # ------------------------------------------------------------------
 class State:
-    api_key: Optional[str] = None
-    base_url: Optional[str] = None
+    api_key: str | None = None
+    base_url: str | None = None
 
 
 state = State()
@@ -110,14 +109,14 @@ def read_text_arg(text: str) -> str:
 # ------------------------------------------------------------------
 @app.callback()
 def main(
-    api_key: Optional[str] = typer.Option(
+    api_key: str | None = typer.Option(
         None,
         "--api-key",
         envvar="DJELIA_API_KEY",
         help="Djelia API key (defaults to the DJELIA_API_KEY env var).",
         show_default=False,
     ),
-    base_url: Optional[str] = typer.Option(
+    base_url: str | None = typer.Option(
         None,
         "--base-url",
         envvar="BASE_URL",
@@ -278,15 +277,13 @@ def speak(
         "output.wav", "--output", "-o", help="Where to write the audio file."
     ),
     model: str = typer.Option("v1", "--model", "-m", help="Model version (v1/v2)."),
-    voice: Optional[int] = typer.Option(
-        None, "--voice", help="Speaker id for v1 (0-4)."
-    ),
-    speaker: Optional[str] = typer.Option(
+    voice: int | None = typer.Option(None, "--voice", help="Speaker id for v1 (0-4)."),
+    speaker: str | None = typer.Option(
         None,
         "--speaker",
         help="Speaker name for v2 (Moussa/Sekou/Seydou); builds a description.",
     ),
-    description: Optional[str] = typer.Option(
+    description: str | None = typer.Option(
         None,
         "--description",
         help="Full v2 voice description (must name a supported speaker).",
@@ -332,7 +329,7 @@ def _speak_stream(
     text: str,
     output: str,
     version: Versions,
-    description: Optional[str],
+    description: str | None,
     chunk_size: float,
 ) -> None:
     import os

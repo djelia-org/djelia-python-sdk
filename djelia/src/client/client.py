@@ -1,5 +1,3 @@
-from typing import Union
-
 import aiohttp
 import requests
 from tenacity import (
@@ -40,9 +38,7 @@ def _build_settings(api_key: Union[str, None], base_url: Union[str, None]) -> Se
 
 
 class Djelia:
-    def __init__(
-        self, api_key: Union[str, None] = None, base_url: Union[str, None] = None
-    ):
+    def __init__(self, api_key: str | None = None, base_url: str | None = None):
         self.settings = _build_settings(api_key, base_url)
         self.base_url = self.settings.base_url
         self.auth = Auth(self.settings.djelia_api_key)
@@ -82,9 +78,7 @@ class Djelia:
 
 
 class DjeliaAsync:
-    def __init__(
-        self, api_key: Union[str, None] = None, base_url: Union[str, None] = None
-    ):
+    def __init__(self, api_key: str | None = None, base_url: str | None = None):
         self.settings = _build_settings(api_key, base_url)
         self.base_url = self.settings.base_url
         self.auth = Auth(self.settings.djelia_api_key)
